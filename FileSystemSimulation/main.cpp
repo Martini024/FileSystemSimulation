@@ -5,11 +5,17 @@
 //  Created by JIN ZHAO on 12/31/18.
 //  Copyright © 2018 JIN ZHAO. All rights reserved.
 //
+#include "Common.h"
+#include "Unix.h"
+#include "File.h"
+#include "Block.h"
+#include "Stream.h"
 
-#include <iostream>
-
-int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+int main() {
+    format();
+    initFileSystem();
+    loginWelcome();
+    processCommand();
+    cout<<"it's the end"<<endl;
     return 0;
 }
