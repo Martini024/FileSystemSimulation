@@ -306,13 +306,12 @@ void do_Passwd() {
         cout << "Current and new password is required." << endl;
         return;
     }
-    else if (cmd.cmdItem[2].length() >= 14) {
+    if (cmd.cmdItem[2].length() >= 14) {
         cout << "Password should be less than 14 letters." << endl;
         return;
     }
     
-    if (strcmp(UserList[currentUserId].userPwd, cmd.cmdItem[1].c_str()) == 0)
-    {
+    if (strcmp(UserList[currentUserId].userPwd, cmd.cmdItem[1].c_str()) == 0) {
         strcpy(UserList[currentUserId].userPwd, cmd.cmdItem[2].c_str());
         writeBlock(0);
         cout << "Change password successful !!!" << endl;
@@ -323,38 +322,37 @@ void do_Passwd() {
 
 
 void do_Login() {
-    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
-        cout << "User name and password is required." << endl;
-        return;
-    }
-    else if (cmd.cmdItem[1].length() >= 14 || cmd.cmdItem[2].length() >= 14) {
-        cout << "User name and password should be less than 14 letters." << endl;
-        return;
-    }
-    
     if (currentUserId != -1) {
         cout << "Cannot login before current user logout." << endl;
         return;
     }
-    else {
-        int flag = 0;
-        for (int i = 0; i < UserList.size(); i++) {
-            if (strcmp(cmd.cmdItem[1].c_str(), UserList[i].userName) == 0 && strcmp(cmd.cmdItem[2].c_str(), UserList[i].userPwd) == 0) {
-                currentUserId = i;
-                currentUserName = cmd.cmdItem[1];
-                flag = 1;
-                break;
-            }
+    
+    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
+        cout << "User name and password is required." << endl;
+        return;
+    }
+    if (cmd.cmdItem[1].length() >= 14 || cmd.cmdItem[2].length() >= 14) {
+        cout << "User name and password should be less than 14 letters." << endl;
+        return;
+    }
+    
+    int flag = 0;
+    for (int i = 0; i < UserList.size(); i++) {
+        if (strcmp(cmd.cmdItem[1].c_str(), UserList[i].userName) == 0 && strcmp(cmd.cmdItem[2].c_str(), UserList[i].userPwd) == 0) {
+            currentUserId = i;
+            currentUserName = cmd.cmdItem[1];
+            flag = 1;
+            break;
         }
-        if (flag)
-        {
-            cout << "Login successfully !!!" << endl;
-            return;
-        }
-        else
-        {
-            cout << "User name or password is wrong, or you can use register command to create one." << endl;
-        }
+    }
+    if (flag)
+    {
+        cout << "Login successfully !!!" << endl;
+        return;
+    }
+    else
+    {
+        cout << "User name or password is wrong, or you can use register command to create one." << endl;
     }
 }
 
@@ -375,63 +373,66 @@ void do_Logout() {
 }
 
 void do_Register() {
-    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
-        cout << "User name and password is required." << endl;
-        return;
-    }
-    else if (cmd.cmdItem[1].length() >= 14 || cmd.cmdItem[2].length() >= 14) {
-        cout << "User name and password should be less than 14 letters." << endl;
-        return;
-    }
-    
     if (currentUserId != -1) {
         cout << "Cannot register before current user logout." << endl;
         return;
     }
-    else {
-        if (UserList.size() < 16)
-        {
-            int flag = 1;
-            for (int i = 0; i < UserList.size(); i++) {
-                if (strcmp(cmd.cmdItem[1].c_str(), UserList[i].userName) == 0) {
-                    flag = 0;
-                    break;
-                }
-            }
-            if (flag)
-            {
-                strcpy(UserInput.userName, cmd.cmdItem[1].c_str());
-                strcpy(UserInput.userPwd, cmd.cmdItem[2].c_str());
-                UserInput.link = (int)UserList.size();
-                UserList.push_back(UserInput);
-                
-                currentUserId = UserInput.link;
-                currentUserName = UserInput.userName;
-                
-                vector<UFD> tmpUFD;
-                FileList.push_back(tmpUFD);
-                
-                vector<UOF> tmpUOF;
-                StateList.push_back(tmpUOF);
-                
-                writeBlock(0);
-                //                writeBlock((int)UserList.size());
-                //                writeBlock((int)UserList.size() + 16);
-                
-                cout << "Create account successfully and already login !!!" << endl;
-                
-            }
-            else
-            {
-                cout << "User name has already existed, please try again." << endl;
+    
+    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
+        cout << "User name and password is required." << endl;
+        return;
+    }
+    if (cmd.cmdItem[1].length() >= 14 || cmd.cmdItem[2].length() >= 14) {
+        cout << "User name and password should be less than 14 letters." << endl;
+        return;
+    }
+    
+    if (UserList.size() < 16)
+    {
+        int flag = 1;
+        for (int i = 0; i < UserList.size(); i++) {
+            if (strcmp(cmd.cmdItem[1].c_str(), UserList[i].userName) == 0) {
+                flag = 0;
+                break;
             }
         }
+        if (flag)
+        {
+            strcpy(UserInput.userName, cmd.cmdItem[1].c_str());
+            strcpy(UserInput.userPwd, cmd.cmdItem[2].c_str());
+            UserInput.link = (int)UserList.size();
+            UserList.push_back(UserInput);
+            
+            currentUserId = UserInput.link;
+            currentUserName = UserInput.userName;
+            
+            vector<UFD> tmpUFD;
+            FileList.push_back(tmpUFD);
+            
+            vector<UOF> tmpUOF;
+            StateList.push_back(tmpUOF);
+            
+            writeBlock(0);
+            //                writeBlock((int)UserList.size());
+            //                writeBlock((int)UserList.size() + 16);
+            
+            cout << "Create account successfully and already login !!!" << endl;
+            
+        }
         else
-            cout << "Cannot register cause the total account number is full." << endl;
+        {
+            cout << "User name has already existed, please try again." << endl;
+        }
     }
+    else
+        cout << "Cannot register cause the total account number is full." << endl;
 }
 
 void do_Create() {
+    if (currentUserId != -1) {
+        cout << "Cannot create file before login." << endl;
+        return;
+    }
     if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
         cout << "File name and mode is required." << endl;
         return;
@@ -492,6 +493,11 @@ void do_Create() {
 }
 
 void do_Delete() {
+    if (currentUserId != -1) {
+        cout << "Cannot delete file before login." << endl;
+        return;
+    }
+    
     if (strcmp(cmd.cmdItem[1].c_str(), "") == 0) {
         cout << "File name is required." << endl;
         return;
