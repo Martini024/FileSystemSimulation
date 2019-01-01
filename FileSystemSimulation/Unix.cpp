@@ -32,8 +32,7 @@ HAND_TO handlerList[] =
     { "Write", do_Write},
     { "Read", do_Read},
     { "Help", do_Help},
-    { "dir", do_Dir},
-    { "cancel",do_Cancel},
+    { "Dir", do_Dir},
     { "Register", do_Register},
     { "Exit", do_Exit},
     { "Clear", do_Clear}
@@ -55,10 +54,15 @@ void processCommand() {
         getline(cin, str);
         stringstream sin(str);
         
+        
         cmdParaNum = 0;
+        for (int i = 0; i < 3; i++) {
+            cmd.cmdItem[i] = "";
+        }
         while (sin >> cmd.cmdItem[cmdParaNum]){
             cmdParaNum++;
         }
+        
         int flag = 0;
         for (int i = 0; i < 20; i++)
         {

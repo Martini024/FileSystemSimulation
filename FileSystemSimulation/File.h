@@ -17,22 +17,23 @@ struct MFD {
 
 struct UFD{
     char fileName[14];  //文件名14B;
-    int mode;  ///文件权限0-readonly;1-writeonly;2-read/write
+    char mode;  ///文件权限0-readonly;1-writeonly;2-read/write
     int length; ///文件长度(以字节数计算)
     int addr;//该文件的第1个文件块对应的物理块号
 };
 
 struct UOF{
     char fileName[14];
-    int mode;
-    int state;
+    char mode;
+    int length;
+    int addr;
     int readPtr;
     int writePtr;
 };
 
 struct Cluster{
-    int nextBlock;
-    char content[512];
+    int nextBlock = -1;
+    char content[512 - sizeof(int)];
 };
 
 void format();

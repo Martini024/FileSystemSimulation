@@ -14,7 +14,8 @@
 vector<MFD> UserList;
 vector< vector<UFD> > FileList;
 vector< vector<UOF> > StateList;
-vector< Cluster> ClusterList;
+vector<Cluster> ClusterList;
+vector<int> FreeBlockList;
 
 MFD UserInput;
 UFD FileInput;
@@ -22,7 +23,7 @@ UOF StateInput;
 Cluster ClusterInput;
 string currentUserName = "";
 int currentUserId = -1;
-char* buffer = new char[513];
+char* buffer = new char[512];
 
 
 
@@ -45,9 +46,9 @@ void initUFD() {
         FileList.push_back(tmpUFD);
         buffer = readBlock(i);
         for (int j = 0; j < 16; j++) {
-            memmove(&FileInput, buffer + i * sizeof(FileInput), sizeof(FileInput));
+            memmove(&FileInput, buffer + j * 32, sizeof(FileInput));
             if (FileInput.fileName[0] != '\0') {
-                FileList[i].push_back(FileInput);
+                FileList[i - 1].push_back(FileInput);
             }
             else {
                 break;
@@ -58,13 +59,13 @@ void initUFD() {
 
 void initUOF() {
     vector<UOF> tmpUOF;
-    for (int i = 16; i < UserList.size() + 16; i++) {
+    for (int i = 17; i < UserList.size() + 17; i++) {
         StateList.push_back(tmpUOF);
         buffer = readBlock(i);
         for (int j = 0; j < 16; j++) {
-            memmove(&StateInput, buffer + i * sizeof(StateInput), sizeof(StateInput));
+            memmove(&StateInput, buffer + j * 32, sizeof(StateInput));
             if (StateInput.fileName[0] != '\0') {
-                StateList[i].push_back(StateInput);
+                StateList[i - 17].push_back(StateInput);
             }
             else {
                 break;
@@ -73,10 +74,22 @@ void initUOF() {
     }
 }
 
+void initCluster() {
+    for (int i = 33; i < 100; i++) {
+        buffer = readBlock(i);
+        memmove(&ClusterInput, buffer, sizeof(ClusterInput));
+        ClusterList.push_back(ClusterInput);
+        if (ClusterInput.nextBlock == -1) {
+            FreeBlockList.push_back(i);
+        }
+    }
+}
+
 void initFileSystem() {
     initMFD();
     initUFD();
     initUOF();
+    initCluster();
 }
 
 

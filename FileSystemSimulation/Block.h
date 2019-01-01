@@ -11,4 +11,5 @@
 
 char* readBlock(int blockNum);
 
+void writeBlock(int blockNum);
 #endif /* Block_hpp */

@@ -8,31 +8,43 @@
 #include "Common.h"
 #include "Stream.h"
 
-ifstream fin;
-ofstream fout;
-
-
+fstream fio;
 
 void openFile() {
     //MARK: 1.Open disk.txt
-    fin.open("disk.txt", ios::in | ios::binary);
-    fout.open("disk.txt", ios::out | ios::binary);
-    if (!fin.is_open()) {
+    fio.open("disk.txt", ios::in | ios::out | ios::binary);
+    if (!fio.is_open()) {
         cout << "Fail to read file from disk" << endl;
         return;
     }
 }
 
 void closeFile() {
-    fin.close();
-    fout.close();
+    fio.close();
 }
 
 void format() {
     char str='\0';
+    int a = -1;
     openFile();
-    for (int i = 0; i < 51301; i++) {
-        fout.write(&str, 1);
+    fio.seekp(ios_base::beg);
+    for (int i = 0; i < 100; i++) {
+        if (i >= 33) {
+            fio.write((char*)&a, sizeof(a));
+        }
+        else {
+            for (int i = 0; i < sizeof(int); i++) {
+                fio.write(&str, 1);
+            }
+        }
+        for (int j = 0; j < 512 - sizeof(int); j++) {
+            fio.write(&str, 1);
+        }
+        str = '\n';
+        fio.write(&str, 1);
+        str = '\0';
     }
+    str = '\n';
+    fio.write(&str, 1);
     closeFile();
 }

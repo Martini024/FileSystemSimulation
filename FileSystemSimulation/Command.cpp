@@ -9,12 +9,13 @@
 #include "Common.h"
 #include "File.h"
 #include "Unix.h"
+#include "Block.h"
 
 extern vector<MFD> UserList;
 extern vector< vector<UFD> > FileList;
 extern vector< vector<UOF> > StateList;
 extern vector< Cluster> ClusterList;
-
+extern vector<int> FreeBlockList;
 extern MFD UserInput;
 extern UFD FileInput;
 extern UOF StateInput;
@@ -301,32 +302,45 @@ void do_Type() {
 }
 
 void do_Passwd() {
-    //Passwd oldPwd  newPwd
+    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
+        cout << "Current and new password is required." << endl;
+        return;
+    }
+    else if (cmd.cmdItem[2].length() >= 14) {
+        cout << "Password should be less than 14 letters." << endl;
+        return;
+    }
+    
     if (strcmp(UserList[currentUserId].userPwd, cmd.cmdItem[1].c_str()) == 0)
     {
         strcpy(UserList[currentUserId].userPwd, cmd.cmdItem[2].c_str());
+        writeBlock(0);
         cout << "Change password successful !!!" << endl;
     }
     else
         cout << "Current password is wrong." << endl;
 }
 
-void do_Cancel() {
-//    out_to_file();
-//    cout << "写入到磁盘成功!" << endl;
-}
 
 void do_Login() {
-    //Login    userName pwd
+    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
+        cout << "User name and password is required." << endl;
+        return;
+    }
+    else if (cmd.cmdItem[1].length() >= 14 || cmd.cmdItem[2].length() >= 14) {
+        cout << "User name and password should be less than 14 letters." << endl;
+        return;
+    }
+    
     if (currentUserId != -1) {
-        cout << "Can't login before current user logout." << endl;
+        cout << "Cannot login before current user logout." << endl;
         return;
     }
     else {
         int flag = 0;
         for (int i = 0; i < UserList.size(); i++) {
             if (strcmp(cmd.cmdItem[1].c_str(), UserList[i].userName) == 0 && strcmp(cmd.cmdItem[2].c_str(), UserList[i].userPwd) == 0) {
-                currentUserId = i;   //全局记录登陆者的ID
+                currentUserId = i;
                 currentUserName = cmd.cmdItem[1];
                 flag = 1;
                 break;
@@ -334,12 +348,12 @@ void do_Login() {
         }
         if (flag)
         {
-            cout << "Login successful !!!" << endl;
+            cout << "Login successfully !!!" << endl;
             return;
         }
         else
         {
-            cout << "Can't find your account, use register command to create one." << endl;
+            cout << "User name or password is wrong, or you can use register command to create one." << endl;
         }
     }
 }
@@ -349,14 +363,29 @@ void do_Exit() {
 }
 
 void do_Logout() {
-    currentUserId = -1;
-    currentUserName = "";
-    cout << "Logout successful !!! " << endl;
+    if (currentUserId == -1) {
+        cout << "Bro you don not need to logout without login." << endl;
+        return;
+    }
+    else {
+        currentUserId = -1;
+        currentUserName = "";
+        cout << "Logout successfully !!! " << endl;
+    }
 }
 
 void do_Register() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
+        cout << "User name and password is required." << endl;
+        return;
+    }
+    else if (cmd.cmdItem[1].length() >= 14 || cmd.cmdItem[2].length() >= 14) {
+        cout << "User name and password should be less than 14 letters." << endl;
+        return;
+    }
+    
     if (currentUserId != -1) {
-        cout << "Can't register before current user logout." << endl;
+        cout << "Cannot register before current user logout." << endl;
         return;
     }
     else {
@@ -375,19 +404,22 @@ void do_Register() {
                 strcpy(UserInput.userPwd, cmd.cmdItem[2].c_str());
                 UserInput.link = (int)UserList.size();
                 UserList.push_back(UserInput);
-
+                
                 currentUserId = UserInput.link;
                 currentUserName = UserInput.userName;
                 
-                //为新的用户开辟空间
                 vector<UFD> tmpUFD;
                 FileList.push_back(tmpUFD);
-
+                
                 vector<UOF> tmpUOF;
                 StateList.push_back(tmpUOF);
-
-                cout << "Create account successful and already login !!!" << endl;
-
+                
+                writeBlock(0);
+                //                writeBlock((int)UserList.size());
+                //                writeBlock((int)UserList.size() + 16);
+                
+                cout << "Create account successfully and already login !!!" << endl;
+                
             }
             else
             {
@@ -395,160 +427,104 @@ void do_Register() {
             }
         }
         else
-            cout << "Can't register cause the total account number is full." << endl;
+            cout << "Cannot register cause the total account number is full." << endl;
     }
 }
 
 void do_Create() {
-    //create name mode
-//    if (FileList[currentUserId].size() < 16) {
-//        int flag = 1;
-//        for (int i = 0; i < FileList[currentUserId].size(); i++) {
-//            if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
-//                flag = 0;
-//                break;
-//            }
-//        }
-//        if (!flag) {
-//            cout << "Can't create file with the same name." << endl;
-//            return;
-//        }
-//
-//        strcpy(FileInput.fileName, cmd.cmdItem[1].c_str());
-//        stringstream sin;
-//        sin << cmd.cmdItem[2];
-//        int tmp;
-//        sin >> tmp;
-//        FileInput.mode = tmp;
-//        FileInput.length = 0;
-//        //要处理接下来的内容存储...
-//        for (int i = 0; i < FileCluster.size(); i++)
-//        {
-//            if (FileCluster[i].is_data == 0)//盘中没有数据，
-//            {
-//                FileInput.addr = i;
-//                FileCluster[i].is_data = 1;
-//                break;
-//            }
-//        }
-//        FileInfo[curID].push_back(FileInput);
-//        cout << "文件创建成功" << endl;
-//
-//        //状态栏
-//        strcpy(StateInput.filename, cmd_in.cmd_num[1].c_str());
-//        StateInput.state = 0;
-//        StateInput.mode = FileInput.mode;
-//        StateInput.read_poit = 0;
-//        StateInput.write_poit = 0;
-//
-//        FileState[curID].push_back(StateInput);
-//
-//    }
-//    else
-//        cout << "超过文件上限！" << endl;
+    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
+        cout << "File name and mode is required." << endl;
+        return;
+    }
+    else if (cmd.cmdItem[1].length() >= 14) {
+        cout << "File name should be less than 14 letters." << endl;
+        return;
+    }
+    else if (strcmp(cmd.cmdItem[2].c_str(), "0") != 0 && strcmp(cmd.cmdItem[2].c_str(), "1") != 0 && strcmp(cmd.cmdItem[2].c_str(), "2") != 0) {
+        cout << "Mode should be within 0, 1, 2 (read_only, write_only, read_and_write)." << endl;
+    }
     
-    
+    if (FileList[currentUserId].size() < 16) {
+        int flag = 1;
+        for (int i = 0; i < FileList[currentUserId].size(); i++) {
+            if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+                flag = 0;
+                break;
+            }
+        }
+        if (!flag) {
+            cout << "Cannot create file with the same name." << endl;
+            return;
+        }
+
+        strcpy(FileInput.fileName, cmd.cmdItem[1].c_str());
+        FileInput.mode = atoi(cmd.cmdItem[2].c_str());
+        FileInput.length = 0;
+
+        if (FreeBlockList.size() > 0) {
+            FileInput.addr = FreeBlockList[0];
+            FreeBlockList.erase(FreeBlockList.begin());
+            FileList[currentUserId].push_back(FileInput);
+            writeBlock(currentUserId + 1);
+            
+            ClusterList[FileInput.addr - 33].nextBlock = FileInput.addr;
+            writeBlock(FileInput.addr);
+            
+            strcpy(StateInput.fileName, FileInput.fileName);
+            StateInput.mode = FileInput.mode;
+            StateInput.length = FileInput.length;
+            StateInput.addr = FileInput.addr;
+            StateInput.readPtr = 0;
+            StateInput.writePtr = 0;
+            StateList[currentUserId].push_back(StateInput);
+            writeBlock(currentUserId + 17);
+            
+            cout << "Create file successfully !!!" << endl;
+        }
+        else {
+            cout << "No free block is available for creating file." << endl;
+        }
+
+    }
+    else {
+        cout << "The number of file reaches the maximum." << endl;
+    }
 }
-void do_Delete()
-{
-//    //delete filename
-//    int flag = 0;
-//    vector<UFD>::iterator it;
-//    for (it = FileInfo[curID].begin(); it != FileInfo[curID].end(); it++)
-//    {
-//        if (strcmp((*it).filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            //FileInfo[curID].erase(it);
-//            flag = 1;
-//            break;
-//        }
-//    }
-//    if (flag)
-//    {
-//        //注意应该清除占用的内存
-//
-//        //Type filename
-//        int address;
-//        for (int i = 0; i < FileInfo[curID].size(); i++)
-//        {
-//            if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//            {
-//                address = FileInfo[curID][i].addr;
-//                break;
-//            }
-//        }
-//        int index;
-//        for (int i = 0; i < FileState[curID].size(); i++)
-//        {
-//            if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//            {
-//                index = i;
-//                break;
-//            }
-//        }
-//
-//        vector<int> reset_addr;
-//        reset_addr.clear();
-//
-//        while (1)
-//        {
-//            if (FileCluster[address].next_num == address)
-//            {
-//                for (int i = 0; i < FileState[curID][index].write_poit; i++)
-//                    FileCluster[address].data[i]=0;
-//                reset_addr.push_back(address);
-//                break;
-//            }
-//            else
-//            {
-//                reset_addr.push_back(address);
-//                for (int i = 0; i < 256; i++)
-//                {
-//                    FileCluster[address].data[i]=0;
-//                }
-//                if (FileCluster[address].next_num != address)
-//                {
-//                    address = FileCluster[address].next_num;
-//                }
-//                else
-//                    break;
-//            }
-//        }
-//
-//        for (int w = 0; w < reset_addr.size(); w++)
-//        {
-//            FileCluster[reset_addr[w]].is_data = 0;
-//            FileCluster[reset_addr[w]].next_num = reset_addr[w];
-//        }
-//
-//        //清除文件信息
-//        vector<UFD>::iterator it;
-//        for (it = FileInfo[curID].begin(); it != FileInfo[curID].end(); it++)
-//        {
-//            if (strcmp((*it).filename, cmd_in.cmd_num[1].c_str()) == 0)
-//            {
-//                FileInfo[curID].erase(it);
-//                flag = 1;
-//                break;
-//            }
-//        }
-//        //清除状态栏
-//        vector<UOF>::iterator it1;
-//        for (it1 = FileState[curID].begin(); it1 != FileState[curID].end(); it1++)
-//        {
-//            if (strcmp((*it1).filename, cmd_in.cmd_num[1].c_str()) == 0)
-//            {
-//                FileState[curID].erase(it1);
-//                break;
-//            }
-//        }
-//
-//        cout << "删除成功!" << endl;
-//    }
-//    else
-//        cout << "文件已经撤销!" << endl;
-    
-    
+
+void do_Delete() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0) {
+        cout << "File name is required." << endl;
+        return;
+    }
+    else if (cmd.cmdItem[1].length() >= 14) {
+        cout << "File name should be less than 14 letters." << endl;
+        return;
+    }
+
+    int flag = 0;
+    for (int i = 0; i < FileList[currentUserId].size(); i++) {
+        if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+            flag = 1;
+            FileInput = FileList[currentUserId][i];
+            FileList[currentUserId].erase(FileList[currentUserId].begin() + i);
+            FreeBlockList.push_back(FileInput.addr);
+            sort(FreeBlockList.begin(), FreeBlockList.end());
+            writeBlock(currentUserId + 1);
+            
+            ClusterList[FileInput.addr - 33].nextBlock = -1;
+            writeBlock(FileInput.addr);
+            
+            StateList[currentUserId].erase(StateList[currentUserId].begin() + i);
+            writeBlock(currentUserId + 17);
+            break;
+        }
+    }
+    if (flag) {
+        cout << "Delete file successfully !!!" << endl;
+    }
+    else {
+        cout << "Cannot find the file to be deleted." << endl;
+    }
 }
 
 void do_Open()

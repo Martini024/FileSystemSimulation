@@ -25,8 +25,7 @@ void do_Read();
 void do_Help();
 void do_Dir();
 void do_Register();
-void do_Cancel();
 void do_Exit();
 void do_Clear();
 
-#endif /* Command_hpp */
+#endif /* Command_h */
