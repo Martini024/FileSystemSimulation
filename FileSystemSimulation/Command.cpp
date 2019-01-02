@@ -60,7 +60,7 @@ void do_Chmod() {
         cout << "Change file mode successfully !!!" << endl;
     }
     else {
-        cout << "Cannot find the file to be changed mode." << endl;
+        cout << "Cannot find the file to change mode." << endl;
     }
 }
 
@@ -122,7 +122,7 @@ void do_Chown() {
             return;
         }
         else {
-            cout << "Cannot find the file to be changed owner." << endl;
+            cout << "Cannot find the file to change owner." << endl;
             return;
         }
     }
@@ -137,25 +137,45 @@ void do_Chown() {
 }
 
 void do_Mv() {
-//    //Mv srcFile desFile
-//    for (int i = 0; i < FileInfo[curID].size(); i++)
-//    {
-//        if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            strcpy(FileInfo[curID][i].filename, cmd_in.cmd_num[2].c_str());
-//            break;
-//        }
-//    }
-//
-//    for (int i = 0; i < FileState[curID].size(); i++)
-//    {
-//        if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            strcpy(FileState[curID][i].filename, cmd_in.cmd_num[2].c_str());
-//            break;
-//        }
-//    }
-//    cout << "重命名文件成功" << endl;
+    //Mv srcFile desFile
+    int flag = 0;
+    int fileId = -1;
+    for (int i = 0; i < FileList[currentUserId].size(); i++) {
+        if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+            flag = 1;
+            fileId = i;
+            break;
+        }
+    }
+    
+    if (flag) {
+        flag = 1;
+        for (int i = 0; i < FileList[currentUserId].size(); i++) {
+            if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[2].c_str()) == 0) {
+                flag = 0;
+                break;
+            }
+        }
+        
+        if (flag) {
+            strcpy(FileList[currentUserId][fileId].fileName, cmd.cmdItem[2].c_str());
+            writeBlock(currentUserId + 1);
+            
+            strcpy(StateList[currentUserId][fileId].fileName, cmd.cmdItem[2].c_str());
+            writeBlock(currentUserId + 17);
+            
+            cout << "Change file name successfully !!!" << endl;
+            return;
+        }
+        else {
+            cout << "New file name has already existed." << endl;
+            return;
+        }
+    }
+    else {
+        cout << "Cannot find the file to change file name." << endl;
+        return;
+    }
 }
 //void do_Write();
 void doTempWrite();
