@@ -108,7 +108,7 @@ void do_Chown() {
                 //MARK: 再来一遍 StateList
                 StateInput = StateList[currentUserId][i];
                 StateList[newOwnerId].push_back(StateInput);
-                writeBlock(newOwnerId + 1);
+                writeBlock(newOwnerId + 17);
                 
                 strcpy(StateInput.fileName, "\0");
                 StateList[currentUserId].erase(StateList[currentUserId].begin() + i);
