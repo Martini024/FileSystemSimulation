@@ -26,93 +26,114 @@ extern char* buffer;
 extern Command cmd;
 
 void do_Chmod() {
-//    int temp;
-//    //Chmod    filename mode
-//    for (int i = 0; i < FileInfo[curID].size(); i++)
-//    {
-//        if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            stringstream ss;
-//            ss << cmd_in.cmd_num[2];
-//            ss >> temp;
-//            FileInfo[curID][i].mode = temp;
-//            break;
-//        }
-//    }
-//    for (int i = 0; i < FileState[curID].size(); i++)
-//    {
-//        if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            FileState[curID][i].mode = temp;
-//            break;
-//        }
-//    }
-//    cout << "修改权限成功!"<<endl;
+    if (currentUserId == -1) {
+        cout << "Cannot change mode before login." << endl;
+        return;
+    }
+    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
+        cout << "File name and new mode are required." << endl;
+        return;
+    }
+    if (cmd.cmdItem[1].length() >= 14 || cmd.cmdItem[2].length() >= 14) {
+        cout << "File name and new mode should be less than 14 letters." << endl;
+        return;
+    }
+    if (strcmp(cmd.cmdItem[2].c_str(), "0") != 0 && strcmp(cmd.cmdItem[2].c_str(), "1") != 0 && strcmp(cmd.cmdItem[2].c_str(), "2") != 0) {
+        cout << "Mode should be within 0, 1, 2 (read_only, write_only, read_and_write)." << endl;
+        return;
+    }
+    
+    int flag = 0;
+    for (int i = 0; i < FileList[currentUserId].size(); i++) {
+        if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+            flag = 1;
+            
+            FileList[currentUserId][i].mode = atoi(cmd.cmdItem[2].c_str());
+            writeBlock(currentUserId + 1);
+            
+            StateList[currentUserId][i].mode = atoi(cmd.cmdItem[2].c_str());
+            writeBlock(currentUserId + 17);
+            break;
+        }
+    }
+    if (flag) {
+        cout << "Change file mode successfully !!!" << endl;
+    }
+    else {
+        cout << "Cannot find the file to be changed mode." << endl;
+    }
 }
+
 void do_Chown() {
-    // Chown filename new_owner
-//    vector<UFD>::iterator it;
-//    for (it = FileInfo[curID].begin(); it != FileInfo[curID].end(); it++)
-//    {
-//        if (strcmp((*it).filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            strcpy(FileInput.filename,(*it).filename);
-//            FileInput.length = (*it).length;
-//            FileInput.mode = (*it).mode;
-//            FileInput.addr = (*it).addr;
-//
-//            FileInfo[curID].erase(it);
-//            break;
-//        }
-//    }
-//
-//    //删除状态栏
-//    vector<UOF>::iterator it_num1;
-//    for (it_num1 = FileState[curID].begin(); it_num1 != FileState[curID].end(); it_num1++)
-//    {
-//        if (strcmp((*it_num1).filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            strcpy(StateInput.filename, (*it_num1).filename);
-//            StateInput.mode = (*it_num1).mode;
-//            StateInput.state = (*it_num1).state;
-//            StateInput.read_poit = (*it_num1).read_poit;
-//            StateInput.write_poit = (*it_num1).write_poit;
-//
-//            FileState[curID].erase(it_num1);
-//            break;
-//        }
-//    }
-//
-//    //添加至新用户的文件栏和状态栏
-//    int tempID;
-//    for (int i = 0; i < UsrInfo.size(); i++)
-//    {
-//        if (strcmp(UsrInfo[i].usrname, cmd_in.cmd_num[2].c_str()) == 0)
-//        {
-//            tempID = i;
-//            break;
-//        }
-//    }
-//    int flag = 0;
-//    //是否存在同名文件，是否替换等
-//    for (int i = 0; i < FileInfo[tempID].size(); i++)
-//    {
-//        if (strcmp(FileInfo[tempID][i].filename, cmd_in.cmd_num[2].c_str()) == 0)
-//        {
-//            flag = 1;
-//            break;
-//        }
-//    }
-//    if (!flag)
-//    {
-//        FileInfo[tempID].push_back(FileInput);
-//        FileState[tempID].push_back(StateInput);
-//        cout << "改变文件拥有者成功！" << endl;
-//    }
-//    else
-//    {
-//        cout << "此用户中已经拥有本名称的文件！" << endl;
-//    }
+    if (currentUserId == -1) {
+        cout << "Cannot change owner before login." << endl;
+        return;
+    }
+    
+    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
+        cout << "File name and new owner are required." << endl;
+        return;
+    }
+    if (cmd.cmdItem[1].length() >= 14 || cmd.cmdItem[2].length() >= 14) {
+        cout << "File name and new owner should be less than 14 letters." << endl;
+        return;
+    }
+    //MARK: check if new user's file number is full
+    int flag = 0;
+    int newOwnerId = -1;
+    for (int i = 0; i < UserList.size(); i++) {
+        if (strcmp(cmd.cmdItem[2].c_str(), UserList[i].userName) == 0 && FileList[i].size() < 16) {
+            flag = 1;
+            newOwnerId = i;
+            break;
+        }
+    }
+    
+    if (flag)
+    {
+        flag = 0;
+        for (int i = 0; i < FileList[currentUserId].size(); i++) {
+            if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+                flag = 1;
+                //MARK: 一边push 一边erase插空 FileList
+                FileInput = FileList[currentUserId][i];
+                FileList[newOwnerId].push_back(FileInput);
+                writeBlock(newOwnerId + 1);
+                
+                strcpy(FileInput.fileName, "\0");
+                FileList[currentUserId].erase(FileList[currentUserId].begin() + i);
+                FileList[currentUserId].push_back(FileInput);
+                writeBlock(currentUserId + 1);
+                
+                //MARK: 再来一遍 StateList
+                StateInput = StateList[currentUserId][i];
+                StateList[newOwnerId].push_back(StateInput);
+                writeBlock(newOwnerId + 1);
+                
+                strcpy(StateInput.fileName, "\0");
+                StateList[currentUserId].erase(StateList[currentUserId].begin() + i);
+                StateList[currentUserId].push_back(StateInput);
+                writeBlock(currentUserId + 17);
+                break;
+            }
+        }
+        if (flag) {
+            cout << "Change file owner successfully !!!" << endl;
+            return;
+        }
+        else {
+            cout << "Cannot find the file to be changed owner." << endl;
+            return;
+        }
+    }
+    else
+    {
+        cout << "New owner's file number reaches maximum or cannot find new owner." << endl;
+        return;
+    }
+    
+    
+    
 }
 
 void do_Mv() {
@@ -303,7 +324,7 @@ void do_Type() {
 
 void do_Passwd() {
     if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
-        cout << "Current and new password is required." << endl;
+        cout << "Current and new password are required." << endl;
         return;
     }
     if (cmd.cmdItem[2].length() >= 14) {
@@ -328,7 +349,7 @@ void do_Login() {
     }
     
     if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
-        cout << "User name and password is required." << endl;
+        cout << "User name and password are required." << endl;
         return;
     }
     if (cmd.cmdItem[1].length() >= 14 || cmd.cmdItem[2].length() >= 14) {
@@ -362,7 +383,7 @@ void do_Exit() {
 
 void do_Logout() {
     if (currentUserId == -1) {
-        cout << "Bro you don not need to logout without login." << endl;
+        cout << "Bro you do not need to logout without login." << endl;
         return;
     }
     else {
@@ -379,7 +400,7 @@ void do_Register() {
     }
     
     if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
-        cout << "User name and password is required." << endl;
+        cout << "User name and password are required." << endl;
         return;
     }
     if (cmd.cmdItem[1].length() >= 14 || cmd.cmdItem[2].length() >= 14) {
@@ -429,20 +450,21 @@ void do_Register() {
 }
 
 void do_Create() {
-    if (currentUserId != -1) {
+    if (currentUserId == -1) {
         cout << "Cannot create file before login." << endl;
         return;
     }
     if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
-        cout << "File name and mode is required." << endl;
+        cout << "File name and mode are required." << endl;
         return;
     }
-    else if (cmd.cmdItem[1].length() >= 14) {
+    if (cmd.cmdItem[1].length() >= 14) {
         cout << "File name should be less than 14 letters." << endl;
         return;
     }
-    else if (strcmp(cmd.cmdItem[2].c_str(), "0") != 0 && strcmp(cmd.cmdItem[2].c_str(), "1") != 0 && strcmp(cmd.cmdItem[2].c_str(), "2") != 0) {
+    if (strcmp(cmd.cmdItem[2].c_str(), "0") != 0 && strcmp(cmd.cmdItem[2].c_str(), "1") != 0 && strcmp(cmd.cmdItem[2].c_str(), "2") != 0) {
         cout << "Mode should be within 0, 1, 2 (read_only, write_only, read_and_write)." << endl;
+        return;
     }
     
     if (FileList[currentUserId].size() < 16) {
@@ -493,7 +515,7 @@ void do_Create() {
 }
 
 void do_Delete() {
-    if (currentUserId != -1) {
+    if (currentUserId == -1) {
         cout << "Cannot delete file before login." << endl;
         return;
     }
@@ -502,7 +524,7 @@ void do_Delete() {
         cout << "File name is required." << endl;
         return;
     }
-    else if (cmd.cmdItem[1].length() >= 14) {
+    if (cmd.cmdItem[1].length() >= 14) {
         cout << "File name should be less than 14 letters." << endl;
         return;
     }
@@ -512,15 +534,20 @@ void do_Delete() {
         if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
             flag = 1;
             FileInput = FileList[currentUserId][i];
-            FileList[currentUserId].erase(FileList[currentUserId].begin() + i);
             FreeBlockList.push_back(FileInput.addr);
             sort(FreeBlockList.begin(), FreeBlockList.end());
-            writeBlock(currentUserId + 1);
             
             ClusterList[FileInput.addr - 33].nextBlock = -1;
             writeBlock(FileInput.addr);
             
+            strcpy(FileInput.fileName, "\0");
+            FileList[currentUserId].erase(FileList[currentUserId].begin() + i);
+            FileList[currentUserId].push_back(FileInput);
+            writeBlock(currentUserId + 1);
+            
+            strcpy(StateInput.fileName, "\0");
             StateList[currentUserId].erase(StateList[currentUserId].begin() + i);
+            StateList[currentUserId].push_back(StateInput);
             writeBlock(currentUserId + 17);
             break;
         }

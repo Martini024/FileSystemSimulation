@@ -12,10 +12,10 @@
 #include "Stream.h"
 
 int main() {
-//    format();
-    initFileSystem();
-    loginWelcome();
-    processCommand();
+    format();
+//    initFileSystem();
+//    loginWelcome();
+//    processCommand();
 //    cout<<"it's the end"<<endl;
     return 0;
 }
