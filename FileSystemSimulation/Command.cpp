@@ -137,6 +137,47 @@ void do_Chown() {
 }
 
 void do_Mv() {
+    int flag = 0;
+    int fileId = -1;
+    for (int i = 0; i < FileList[currentUserId].size(); i++) {
+        if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+            flag = 1;
+            fileId = i;
+            break;
+        }
+    }
+    
+    if (flag) {
+        flag = 1;
+        for (int i = 0; i < FileList[currentUserId].size(); i++) {
+            if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[2].c_str()) == 0) {
+                flag = 0;
+                break;
+            }
+        }
+        
+        if (flag) {
+            strcpy(FileList[currentUserId][fileId].fileName, cmd.cmdItem[2].c_str());
+            writeBlock(currentUserId + 1);
+            
+            strcpy(StateList[currentUserId][fileId].fileName, cmd.cmdItem[2].c_str());
+            writeBlock(currentUserId + 17);
+            
+            cout << "Change file name successfully !!!" << endl;
+            return;
+        }
+        else {
+            cout << "New file name has already existed." << endl;
+            return;
+        }
+    }
+    else {
+        cout << "Cannot find the file to change file name." << endl;
+        return;
+    }
+}
+
+void do_Copy() {
     //Mv srcFile desFile
     int flag = 0;
     int firstFileId = -1;
@@ -235,46 +276,7 @@ void do_Mv() {
     }
 }
 
-void do_Copy() {
-    int flag = 0;
-    int fileId = -1;
-    for (int i = 0; i < FileList[currentUserId].size(); i++) {
-        if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
-            flag = 1;
-            fileId = i;
-            break;
-        }
-    }
-    
-    if (flag) {
-        flag = 1;
-        for (int i = 0; i < FileList[currentUserId].size(); i++) {
-            if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[2].c_str()) == 0) {
-                flag = 0;
-                break;
-            }
-        }
-        
-        if (flag) {
-            strcpy(FileList[currentUserId][fileId].fileName, cmd.cmdItem[2].c_str());
-            writeBlock(currentUserId + 1);
-            
-            strcpy(StateList[currentUserId][fileId].fileName, cmd.cmdItem[2].c_str());
-            writeBlock(currentUserId + 17);
-            
-            cout << "Change file name successfully !!!" << endl;
-            return;
-        }
-        else {
-            cout << "New file name has already existed." << endl;
-            return;
-        }
-    }
-    else {
-        cout << "Cannot find the file to change file name." << endl;
-        return;
-    }
-}
+
 void do_Dir() {
 //    for (int i = 0; i < FileInfo[curID].size(); i++)
 //    {
