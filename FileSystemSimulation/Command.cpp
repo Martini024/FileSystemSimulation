@@ -248,18 +248,20 @@ void do_Copy() {
                 recycleIterator = ClusterList[secondIterator].nextBlock - 33;
                 ClusterList[secondIterator].nextBlock = secondIterator + 33;
                 writeBlock(secondIterator + 33);
-
-                while (ClusterList[recycleIterator].nextBlock != recycleIterator + 33) {
+                
+                if (firstBlockNum != secondBlockNum) {
+                    while (ClusterList[recycleIterator].nextBlock != recycleIterator + 33) {
+                        FreeBlockList.push_back(recycleIterator + 33);
+                        secondIterator = recycleIterator;
+                        recycleIterator = ClusterList[recycleIterator].nextBlock - 33;
+                        ClusterList[secondIterator].nextBlock = -1;
+                        writeBlock(secondIterator + 33);
+                    }
                     FreeBlockList.push_back(recycleIterator + 33);
-                    secondIterator = recycleIterator;
-                    recycleIterator = ClusterList[recycleIterator].nextBlock - 33;
-                    ClusterList[secondIterator].nextBlock = -1;
-                    writeBlock(secondIterator + 33);
+                    sort(FreeBlockList.begin(), FreeBlockList.end());
+                    ClusterList[recycleIterator].nextBlock = -1;
+                    writeBlock(recycleIterator + 33);
                 }
-                FreeBlockList.push_back(recycleIterator + 33);
-                sort(FreeBlockList.begin(), FreeBlockList.end());
-                ClusterList[recycleIterator].nextBlock = -1;
-                writeBlock(recycleIterator + 33);
             }
             
             cout << "Copy file successfully !!!" << endl;
@@ -277,58 +279,52 @@ void do_Copy() {
 }
 
 
-void do_Dir() {
-//    for (int i = 0; i < FileInfo[curID].size(); i++)
-//    {
-//        cout << FileInfo[curID][i].filename << "  ";
-//    }
-//    cout << endl;
-    
-}
-void do_Type() {
-//    //Type filename
-//    int address;
-//    for (int i = 0; i < FileInfo[curID].size(); i++)
-//    {
-//        if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            address = FileInfo[curID][i].addr;
-//            break;
-//        }
-//    }
-//    int index;
-//    for (int i = 0; i < FileState[curID].size(); i++)
-//    {
-//        if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            index = i;
-//            break;
-//        }
-//    }
+//void do_Dir() {
+////    for (int i = 0; i < FileInfo[curID].size(); i++)
+////    {
+////        cout << FileInfo[curID][i].filename << "  ";
+////    }
+////    cout << endl;
 //
-//    while (1)
-//    {
-//        if (FileCluster[address].next_num == address)
-//        {
-//            for (int i = 0; i < FileState[curID][index].write_poit; i++)
-//                cout << FileCluster[address].data[i];
-//            break;
-//        }
-//        else
-//        {
-//            for (int i = 0; i < 256; i++)
-//            {
-//                cout << FileCluster[address].data[i];
-//            }
-//            if (FileCluster[address].next_num != address)
-//            {
-//                address = FileCluster[address].next_num;
-//            }
-//            else
-//                break;
-//        }
-//    }
-//    cout << endl;
+//}
+void do_Read() {
+    if (currentUserId == -1) {
+        cout << "Cannot show file content before login." << endl;
+        return;
+    }
+    if (strcmp(cmd.cmdItem[1].c_str(), "") == 0) {
+        cout << "File name is required." << endl;
+        return;
+    }
+    if (cmd.cmdItem[1].length() >= 14) {
+        cout << "File name should be less than 14 letters." << endl;
+        return;
+    }
+    
+    int flag = 0;
+    int address = -1;
+    for (int i = 0; i < FileList[currentUserId].size(); i++) {
+        if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+            flag = 1;
+            address = FileList[currentUserId][i].addr;
+            break;
+        }
+    }
+    
+    if (flag) {
+        
+        while (ClusterList[address - 33].nextBlock != address) {
+            cout << ClusterList[address - 33].content;
+            address = ClusterList[address - 33].nextBlock;
+        }
+        cout << ClusterList[address - 33].content << endl;
+        cout << "Show file content successfully !!!" << endl;
+        return;
+    }
+    else {
+        cout << "Cannot find the file to show content." << endl;
+        return;
+    }
 }
 
 void do_Passwd() {
@@ -569,51 +565,7 @@ void do_Delete() {
     }
 }
 
-void do_Open()
-{
-//    //Open  filename mode
-//    stringstream ss;
-//    ss << cmd_in.cmd_num[2];
-//    int temp;
-//    ss >> temp;
-//    //判断是否有权限,还没做呢......
-//    int flag = 0;
-//    for (int i = 0; i < FileState[curID].size(); i++)
-//    {
-//        if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            FileState[curID][i].state = 1;
-//            flag = 1;
-//            break;
-//        }
-//    }
-//    if (flag)
-//        cout << "打开文件成功!" << endl;
-//    else
-//    {
-//        strcpy(StateInput.filename, cmd_in.cmd_num[1].c_str());
-//        StateInput.mode = temp;
-//        StateInput.state = 1;
-//        StateInput.read_poit = StateInput.write_poit = 0;
-//        FileState[curID].push_back(StateInput);
-//        cout << "打开文件成功！" << endl;
-//    }
-    
-}
-void do_Close()
-{
-//    //close filename
-//    vector<UOF>::iterator it;
-//    for (it = FileState[curID].begin(); it != FileState[curID].end(); it++)
-//    {
-//        if (strcmp((*it).filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            FileState[curID].erase(it);
-//            cout << "关闭文件成功！" << endl;
-//            break;
-//        }
-//    }
-}
+
 
 /*int num;
  int next_num;
@@ -730,78 +682,6 @@ void do_Write()
 
 //write_poit记录最终磁盘的写指针，read_poit记录全局总数的读指针的位置。
 
-void do_Read()
-{
-//    //Read     filename buffer nbytes
-//    char buf[1024];
-//    stringstream ss;
-//    ss << cmd_in.cmd_num[3];
-//    int temp;
-//    ss >> temp;
-//
-//    for (int i = 0; i < FileInfo[curID].size(); i++)
-//    {
-//        if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            if (FileInfo[curID][i].mode == 0 || FileInfo[curID][i].mode == 2)//判断权限
-//            {
-//                break;
-//            }
-//            else
-//            {
-//                cout << "没有读的权限!" << endl;
-//                return;
-//            }
-//        }
-//    }
-//
-//    int index;
-//    for (int i = 0; i < FileState[curID].size(); i++)
-//    {
-//        if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            index = i;
-//            break;
-//        }
-//    }
-//
-//    int address;
-//    for (int i = 0; i < FileInfo[curID].size(); i++)
-//    {
-//        if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            address = FileInfo[curID][i].addr;
-//            break;
-//        }
-//    }
-//
-//    int rbegin;
-//    rbegin = FileState[curID][index].read_poit;
-//    int addcur = rbegin / 256;
-//
-//    for (int i = 0; i < addcur; i++)
-//    {
-//        address = FileCluster[address].next_num;
-//    }
-//
-//    for (int i = 0; i < temp; i++)
-//    {
-//        if (rbegin % 256 == 255)
-//        {
-//            address = FileCluster[address].next_num;
-//        }
-//        buf[i] = FileCluster[address].data[rbegin % 256];
-//        rbegin++;
-//    }
-//
-//    FileState[curID][index].read_poit = rbegin;
-//
-//    cout << "读出的数据是：" << endl;
-//    for (int i = 0; i < temp; i++)
-//        cout << buf[i];
-//    cout << endl;
-    
-}
 void do_Help()
 {
 //    cout << "Login    userName pwd    用户登陆" << endl;
@@ -824,112 +704,7 @@ void do_Help()
 //    cout << "sysc   同步到磁盘 " << endl;
 }
 
-void doTempWrite()
-{
-//    //Write    filename buffer nbytes 写文件   物理空间68
-//
-//    char buf[1024];
-//    stringstream ss;
-//    ss << cmd_in.cmd_num[3];
-//    int temp;
-//    ss >> temp;
-//
-//
-//    for (int i = 0; i < FileInfo[curID].size(); i++)
-//    {
-//        if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            if (FileInfo[curID][i].mode == 1 || FileInfo[curID][i].mode == 2)//判断权限
-//            {
-//                break;
-//            }
-//            else
-//            {
-//                cout << "没有写的权限!" << endl;
-//                return;
-//            }
-//        }
-//    }
-//
-//    int index;
-//    for (int i = 0; i < FileState[curID].size(); i++)
-//    {
-//        if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            index = i;
-//            break;
-//        }
-//    }
-//    //起始物理块
-//    int address;
-//    for (int i = 0; i < FileInfo[curID].size(); i++)
-//    {
-//        if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            address = FileInfo[curID][i].addr;
-//            break;
-//        }
-//    }
-//    //注意：此处发生了更改！
-//    /*cout << "请输入buff的内容：" << endl;
-//     gets(buf);
-//     fflush(stdin);*/
-//
-//
-//    strcpy(buf, cmd_in.cmd_num[2].c_str());
-//
-//    int wbegin;
-//    wbegin = FileState[curID][index].write_poit;
-//
-//    //找到写指针所在的最后一个磁盘
-//    while (FileCluster[address].next_num != address)
-//        address = FileCluster[address].next_num;
-//
-//    vector <int> newspace_num;//计算将要占用的物理块的数量
-//    newspace_num.clear();
-//
-//    //int num = (256-wbegin+temp) / 256-1;
-//    if (temp <= 256 - wbegin)
-//        num = 0;
-//    else
-//    {
-//        num = ceil((temp - (256 - wbegin))*1.0 / 256);
-//    }
-//
-//    newspace_num.push_back(address);
-//
-//    //cout << newspace_num.size() << endl;//
-//
-//    for (int i = 0; i < FileCluster.size(); i++)
-//    {
-//        if (newspace_num.size() == num + 1)
-//            break;
-//        if (FileCluster[i].is_data == 0)
-//        {
-//            newspace_num.push_back(i);
-//            FileCluster[i].is_data = 1;
-//        }
-//    }
-//
-//    for (int k = 0; k < newspace_num.size() - 1; k++)
-//    {
-//        FileCluster[newspace_num[k]].next_num = newspace_num[k + 1];
-//    }
-//    for (int i = 0; i < temp; i++)
-//    {
-//        if (wbegin == 256)
-//        {
-//            wbegin = 0;
-//            address = FileCluster[address].next_num;
-//        }
-//        FileCluster[address].data[wbegin] = buf[i];
-//        wbegin++;
-//    }
-//
-//    //更新写指针
-//    FileState[curID][index].write_poit = wbegin;
-//    cout << "磁盘写入成功!" << endl;
-//    return;
+void do_Ls() {
     
 }
 
