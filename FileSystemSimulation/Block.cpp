@@ -12,12 +12,10 @@
 
 extern vector<MFD> UserList;
 extern vector< vector<UFD> > FileList;
-extern vector< vector<UOF> > StateList;
 extern vector< Cluster> ClusterList;
 
 extern MFD UserInput;
 extern UFD FileInput;
-extern UOF StateInput;
 extern Cluster ClusterInput;
 extern string currentUserName;
 extern int currentUserId;
@@ -48,15 +46,25 @@ void writeBlock(int blockNum) {
             fio.seekp(32 - sizeof((FileList[currentUserId])[i]), ios_base::cur);
         }
     }
-    else if (blockNum >= 17 && blockNum <= 32) {
-        for (int i = 0; i < StateList[currentUserId].size(); i++) {
-            fio.write((char*)&((StateList[currentUserId])[i]), sizeof((StateList[currentUserId])[i]));
-            fio.seekp(32 - sizeof((StateList[currentUserId])[i]), ios_base::cur);
-        }
-    }
-    else if (blockNum >= 33 && blockNum <= 99) {
-        fio.write((char*)&(ClusterList[blockNum - 33]), sizeof(ClusterList[blockNum - 33]));
+    else if (blockNum >= 17 && blockNum <= 99) {
+        fio.write((char*)&(ClusterList[blockNum - 17]), sizeof(ClusterList[blockNum - 17]));
     }
     closeFile();
-    
+}
+
+void clearBlock(int blockNum) {
+    char str='\0';
+    int a = -1;
+    if (blockNum >= 17 && blockNum <= 99) {
+        openFile();
+        fio.seekp(blockNum * 513, ios_base::beg);
+        fio.write((char*)&a, sizeof(a));
+        for (int j = 0; j < 512 - sizeof(int); j++) {
+            fio.write(&str, 1);
+        }
+        str = '\n';
+        fio.write(&str, 1);
+        closeFile();
+    }
+    return;
 }

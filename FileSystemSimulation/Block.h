@@ -12,4 +12,6 @@
 char* readBlock(int blockNum);
 
 void writeBlock(int blockNum);
+
+void clearBlock(int blockNum);
 #endif /* Block_hpp */

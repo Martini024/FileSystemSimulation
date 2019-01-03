@@ -27,8 +27,6 @@ struct Cluster{
     char content[512 - sizeof(int)];
 };
 
-void format();
-
 void initFileSystem();
 
 void closeFileSystem();

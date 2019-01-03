@@ -13,16 +13,15 @@
 
 vector<MFD> UserList;
 vector< vector<UFD> > FileList;
-vector< vector<UOF> > StateList;
 vector<Cluster> ClusterList;
 vector<int> FreeBlockList;
 
 MFD UserInput;
 UFD FileInput;
-UOF StateInput;
 Cluster ClusterInput;
 string currentUserName = "";
 int currentUserId = -1;
+int currentUserUFD = -1;
 char* buffer = new char[512];
 
 
@@ -57,25 +56,8 @@ void initUFD() {
     }
 }
 
-void initUOF() {
-    vector<UOF> tmpUOF;
-    for (int i = 17; i < UserList.size() + 17; i++) {
-        StateList.push_back(tmpUOF);
-        buffer = readBlock(i);
-        for (int j = 0; j < 16; j++) {
-            memmove(&StateInput, buffer + j * 32, sizeof(StateInput));
-            if (StateInput.fileName[0] != '\0') {
-                StateList[i - 17].push_back(StateInput);
-            }
-            else {
-                break;
-            }
-        }
-    }
-}
-
 void initCluster() {
-    for (int i = 33; i < 100; i++) {
+    for (int i = 17; i < 100; i++) {
         buffer = readBlock(i);
         memmove(&ClusterInput, buffer, sizeof(ClusterInput));
         ClusterList.push_back(ClusterInput);
@@ -88,7 +70,6 @@ void initCluster() {
 void initFileSystem() {
     initMFD();
     initUFD();
-    initUOF();
     initCluster();
 }
 

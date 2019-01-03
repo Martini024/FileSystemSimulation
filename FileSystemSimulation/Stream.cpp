@@ -29,7 +29,7 @@ void format() {
     openFile();
     fio.seekp(ios_base::beg);
     for (int i = 0; i < 100; i++) {
-        if (i >= 33) {
+        if (i >= 17) {
             fio.write((char*)&a, sizeof(a));
         }
         else {

@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #include <fstream>
-#include <string>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <vector>
