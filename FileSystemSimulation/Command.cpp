@@ -139,6 +139,104 @@ void do_Chown() {
 void do_Mv() {
     //Mv srcFile desFile
     int flag = 0;
+    int firstFileId = -1;
+    int secondFileId = -1;
+    for (int i = 0; i < FileList[currentUserId].size(); i++) {
+        if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+            flag = 1;
+            firstFileId = i;
+            break;
+        }
+    }
+    
+    if (flag) {
+        flag = 0;
+        for (int i = 0; i < FileList[currentUserId].size(); i++) {
+            if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[2].c_str()) == 0) {
+                flag = 1;
+                secondFileId = i;
+                break;
+            }
+        }
+        
+        if (flag) {
+            int firstBlockNum = FileList[currentUserId][firstFileId].length % (512 - sizeof(int));
+            int secondBlockNum = FileList[currentUserId][secondFileId].length % (512 - sizeof(int));
+            if (firstBlockNum > secondBlockNum) {
+                if (FreeBlockList.size() < firstBlockNum - secondBlockNum) {
+                    cout << "Cannot copy cause there's no free space." << endl;
+                    return;
+                }
+                //开始cpoy
+                int firstIterator = firstFileId;
+                int secondIterator = secondFileId;
+                int allocatedBlock =  -1;
+                while (ClusterList[firstIterator].nextBlock != firstIterator + 33) {
+                    if (ClusterList[secondIterator].nextBlock != secondIterator + 33) {
+                        strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
+                        writeBlock(secondIterator + 33);
+                        secondIterator = ClusterList[secondIterator].nextBlock;
+                        firstIterator = ClusterList[firstIterator].nextBlock;
+                    }
+                    else {
+                        strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
+                        firstIterator = ClusterList[firstIterator].nextBlock;
+                        
+                        allocatedBlock = FreeBlockList[0];
+                        FreeBlockList.erase(FreeBlockList.begin());
+                        ClusterList[secondIterator].nextBlock = allocatedBlock;
+                        ClusterList[allocatedBlock - 33].nextBlock = allocatedBlock;
+                        writeBlock(secondIterator + 33);
+                        secondIterator = allocatedBlock - 33;
+                    }
+                }
+                strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
+                writeBlock(secondIterator + 33);
+            }
+            else {
+                int firstIterator = firstFileId;
+                int secondIterator = secondFileId;
+                int recycleIterator =  -1;
+                while (ClusterList[firstIterator].nextBlock != firstIterator + 33) {
+                    strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
+                    writeBlock(secondIterator + 33);
+                    secondIterator = ClusterList[secondIterator].nextBlock;
+                    firstIterator = ClusterList[firstIterator].nextBlock;
+                }
+                strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
+                recycleIterator = ClusterList[secondIterator].nextBlock - 33;
+                ClusterList[secondIterator].nextBlock = secondIterator + 33;
+                writeBlock(secondIterator + 33);
+
+                while (ClusterList[recycleIterator].nextBlock != recycleIterator + 33) {
+                    FreeBlockList.push_back(recycleIterator + 33);
+                    secondIterator = recycleIterator;
+                    recycleIterator = ClusterList[recycleIterator].nextBlock - 33;
+                    ClusterList[secondIterator].nextBlock = -1;
+                    writeBlock(secondIterator + 33);
+                }
+                FreeBlockList.push_back(recycleIterator + 33);
+                sort(FreeBlockList.begin(), FreeBlockList.end());
+                ClusterList[recycleIterator].nextBlock = -1;
+                writeBlock(recycleIterator + 33);
+            }
+            
+            cout << "Copy file successfully !!!" << endl;
+            return;
+        }
+        else {
+            cout << "Cannot find the destination file." << endl;
+            return;
+        }
+    }
+    else {
+        cout << "Cannot find the source file." << endl;
+        return;
+    }
+}
+
+void do_Copy() {
+    int flag = 0;
     int fileId = -1;
     for (int i = 0; i < FileList[currentUserId].size(); i++) {
         if (strcmp(FileList[currentUserId][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
@@ -176,117 +274,6 @@ void do_Mv() {
         cout << "Cannot find the file to change file name." << endl;
         return;
     }
-}
-//void do_Write();
-void doTempWrite();
-void make_new_copy() {
-//    //Type filename
-//    string Tempbuff;
-//    int addre;
-//    for (int i = 0; i < FileInfo[curID].size(); i++)
-//    {
-//        if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            addre = FileInfo[curID][i].addr;
-//            break;
-//        }
-//    }
-//    int index;
-//    for (int i = 0; i < FileState[curID].size(); i++)
-//    {
-//        if (strcmp(FileState[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            index = i;
-//            break;
-//        }
-//    }
-//
-//    while (1)
-//    {
-//        if (FileCluster[addre].next_num == addre)
-//        {
-//            for (int i = 0; i < FileState[curID][index].write_poit; i++)
-//            {
-//                //cout << FileCluster[addre].data[i];
-//                Tempbuff += FileCluster[addre].data[i];
-//            }
-//            break;
-//        }
-//        else
-//        {
-//            for (int i = 0; i < 256; i++)
-//            {
-//                //cout << FileCluster[addre].data[i];
-//                Tempbuff += FileCluster[addre].data[i];
-//            }
-//            if (FileCluster[addre].next_num != addre)
-//            {
-//                addre = FileCluster[addre].next_num;
-//            }
-//            else
-//                break;
-//        }
-//    }
-//
-//    //Write    filename buffer nbytes 写文件   物理空间68
-//    cmd_in.cmd_num[0] = "Write";
-//    cmd_in.cmd_num[1] = cmd_in.cmd_num[2];
-//    cmd_in.cmd_num[2] = Tempbuff;
-//    stringstream ss;
-//    ss << Tempbuff.length();
-//    string curtp;
-//    ss >> curtp;
-//    cmd_in.cmd_num[3] = curtp;
-//    //cout << cmd_in.cmd_num[0] << " " << cmd_in.cmd_num[1] << "  " << cmd_in.cmd_num[2] << " " << cmd_in.cmd_num[3] << endl;
-//    //do_Write();
-//    doTempWrite();
-    
-}
-void do_Create();
-void do_Copy() {
-//    //Copy  srcFile desFile
-//    int address;
-//    for (int i = 0; i < FileInfo[curID].size(); i++)
-//    {
-//        if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[1].c_str()) == 0)
-//        {
-//            address = FileInfo[curID][i].addr;
-//            break;
-//        }
-//    }
-//
-//    int flag = 0;
-//    for (int i = 0; i < FileInfo[curID].size(); i++)
-//    {
-//        if (strcmp(FileInfo[curID][i].filename, cmd_in.cmd_num[2].c_str()) == 0)
-//        {
-//            flag = 1;
-//            break;
-//        }
-//    }
-//    string s1, s2, s3;
-//    s1 = cmd_in.cmd_num[0];
-//    s2 = cmd_in.cmd_num[1];
-//    s3 = cmd_in.cmd_num[2];
-//    //新的文件名存在....
-//    if (flag)
-//    {
-//        make_new_copy();
-//    }
-//    else   //新的文件名不存在的话要新建一个
-//    {
-//        //Create name mode
-//        cmd_in.cmd_num[0]="Create";
-//        cmd_in.cmd_num[1]=cmd_in.cmd_num[2];
-//        cmd_in.cmd_num[2]="2";
-//        do_Create();
-//        cmd_in.cmd_num[0] = s1;
-//        cmd_in.cmd_num[1] = s2;
-//        cmd_in.cmd_num[2] = s3;
-//        make_new_copy();
-//
-//    }
-    
 }
 void do_Dir() {
 //    for (int i = 0; i < FileInfo[curID].size(); i++)
