@@ -568,6 +568,10 @@ void do_Mv() {
         cout << "Cannot change file name before login." << endl;
         return;
     }
+    if (cmd.cmdItem[1].length() >= 14 || cmd.cmdItem[2].length() >= 14) {
+        cout << "File name and new file name should be less than 14 letters." << endl;
+        return;
+    }
     int flag = 0;
     int fileId = -1;
     for (int i = 0; i < FileList[currentUserUFD].size(); i++) {

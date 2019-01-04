@@ -19,6 +19,7 @@ extern UFD FileInput;
 extern Cluster ClusterInput;
 extern string currentUserName;
 extern int currentUserId;
+extern int currentUserUFD;
 extern char* buffer;
 
 extern fstream fio;
@@ -41,9 +42,9 @@ void writeBlock(int blockNum) {
         }
     }
     else if (blockNum >= 1 && blockNum <= 16) {
-        for (int i = 0; i < FileList[currentUserId].size(); i++) {
-            fio.write((char*)&((FileList[currentUserId])[i]), sizeof((FileList[currentUserId])[i]));
-            fio.seekp(32 - sizeof((FileList[currentUserId])[i]), ios_base::cur);
+        for (int i = 0; i < FileList[blockNum - 1].size(); i++) {
+            fio.write((char*)&((FileList[blockNum - 1])[i]), sizeof((FileList[blockNum - 1])[i]));
+            fio.seekp(32 - sizeof((FileList[blockNum - 1])[i]), ios_base::cur);
         }
     }
     else if (blockNum >= 17 && blockNum <= 99) {
