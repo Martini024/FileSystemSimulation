@@ -637,30 +637,31 @@ void do_Copy() {
         }
 
         if (flag) {
-            int firstBlockNum = FileList[currentUserUFD][firstFileId].length % (512 - sizeof(int));
-            int secondBlockNum = FileList[currentUserUFD][secondFileId].length % (512 - sizeof(int));
+            int firstBlockNum = FileList[currentUserUFD][firstFileId].length / (512 - sizeof(int)) + (FileList[currentUserUFD][firstFileId].length % (512 - sizeof(int)) > 0);
+            int secondBlockNum = FileList[currentUserUFD][secondFileId].length / (512 - sizeof(int)) + (FileList[currentUserUFD][secondFileId].length % (512 - sizeof(int)) > 0);
             if (firstBlockNum > secondBlockNum) {
                 if (FreeBlockList.size() < firstBlockNum - secondBlockNum) {
                     cout << "Cannot copy cause there's no free space." << endl;
                     return;
                 }
                 FileList[currentUserUFD][secondFileId].length = FileList[currentUserUFD][firstFileId].length;
+                writeBlock(currentUserUFD + 1);
                 //开始cpoy
-                int firstIterator = FileList[currentUserUFD][firstFileId].addr;
-                int secondIterator = FileList[currentUserUFD][secondFileId].addr;
+                int firstIterator = FileList[currentUserUFD][firstFileId].addr - 17;
+                int secondIterator = FileList[currentUserUFD][secondFileId].addr - 17;
                 int allocatedBlock =  -1;
                 while (ClusterList[firstIterator].nextBlock != firstIterator + 17) {
                     if (ClusterList[secondIterator].nextBlock != secondIterator + 17) {
-                        getDataBlock(firstIterator);
+                        getDataBlock(firstIterator + 17);
                         strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
                         writeBlock(secondIterator + 17);
                         secondIterator = ClusterList[secondIterator].nextBlock;
                         firstIterator = ClusterList[firstIterator].nextBlock;
                     }
                     else {
-                        getDataBlock(firstIterator);
+                        getDataBlock(firstIterator + 17);
                         strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
-                        firstIterator = ClusterList[firstIterator].nextBlock;
+                        firstIterator = ClusterList[firstIterator].nextBlock - 17;
 
                         allocatedBlock = FreeBlockList[0];
                         FreeBlockList.erase(FreeBlockList.begin());
@@ -671,22 +672,22 @@ void do_Copy() {
                     }
                 }
                 clearBlock(secondIterator + 17);
-                getDataBlock(firstIterator);
+                getDataBlock(firstIterator + 17);
                 strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
                 writeBlock(secondIterator + 17);
             }
             else {
-                int firstIterator = FileList[currentUserUFD][firstFileId].addr;
-                int secondIterator = FileList[currentUserUFD][secondFileId].addr;
+                int firstIterator = FileList[currentUserUFD][firstFileId].addr - 17;
+                int secondIterator = FileList[currentUserUFD][secondFileId].addr - 17;
                 int recycleIterator =  -1;
                 while (ClusterList[firstIterator].nextBlock != firstIterator + 17) {
-                    getDataBlock(firstIterator);
+                    getDataBlock(firstIterator + 17);
                     strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
                     writeBlock(secondIterator + 17);
-                    secondIterator = ClusterList[secondIterator].nextBlock;
-                    firstIterator = ClusterList[firstIterator].nextBlock;
+                    secondIterator = ClusterList[secondIterator].nextBlock - 17;
+                    firstIterator = ClusterList[firstIterator].nextBlock - 17;
                 }
-                getDataBlock(firstIterator);
+                getDataBlock(firstIterator + 17);
                 strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
                 recycleIterator = ClusterList[secondIterator].nextBlock - 17;
                 ClusterList[secondIterator].nextBlock = secondIterator + 17;
