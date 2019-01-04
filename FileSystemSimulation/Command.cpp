@@ -386,7 +386,7 @@ void do_Write() {
             int firstIterator = 0;
             int secondIterator = blockAddress - 17;
             int allocatedBlock =  -1;
-            while (firstIterator != bufferBlockNum) {
+            while (firstIterator + 1 != bufferBlockNum) {
                 if (ClusterList[secondIterator].nextBlock != secondIterator + 17) {
                     strcpy(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), (512 - sizeof(int))).c_str());
                     writeBlock(secondIterator + 17);
