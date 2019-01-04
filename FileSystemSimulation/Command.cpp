@@ -382,7 +382,8 @@ void do_Write() {
                 return;
             }
             FileList[currentUserUFD][secondFileId].length = (int)buffer.size();
-
+            writeBlock(currentUserUFD + 1);
+            
             int firstIterator = 0;
             int secondIterator = blockAddress - 17;
             int allocatedBlock =  -1;
@@ -415,8 +416,9 @@ void do_Write() {
             int recycleIterator =  -1;
             
             FileList[currentUserUFD][secondFileId].length = (int)buffer.size();
-
-            while (firstIterator != bufferBlockNum) {
+            writeBlock(currentUserUFD + 1);
+            
+            while (firstIterator + 1 != bufferBlockNum) {
                 strcpy(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), (512 - sizeof(int))).c_str());
                 writeBlock(secondIterator + 17);
                 secondIterator = ClusterList[secondIterator].nextBlock - 17;
