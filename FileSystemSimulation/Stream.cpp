@@ -25,12 +25,12 @@ void closeFile() {
 
 void format() {
     char str='\0';
-    int a = -1;
+    int nextBlock = -1;
     openFile();
     fio.seekp(ios_base::beg);
     for (int i = 0; i < 100; i++) {
         if (i >= 17) {
-            fio.write((char*)&a, sizeof(a));
+            fio.write((char*)&nextBlock, sizeof(nextBlock));
         }
         else {
             for (int i = 0; i < sizeof(int); i++) {

@@ -21,7 +21,7 @@ extern UFD FileInput;
 extern Cluster ClusterInput;
 extern string currentUserName;
 extern int currentUserId;
-extern int currentuserUFD;
+extern int currentUserUFD;
 extern char* buffer;
 extern Command cmd;
 
@@ -32,7 +32,7 @@ void do_Login() {
         cout << "Cannot login before current user logout." << endl;
         return;
     }
-    
+
     if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
         cout << "User name and password are required." << endl;
         return;
@@ -41,13 +41,13 @@ void do_Login() {
         cout << "User name and password should be less than 14 letters." << endl;
         return;
     }
-    
+
     //MARK: Record current user link and name
     int flag = 0;
     for (int i = 0; i < UserList.size(); i++) {
         if (strcmp(cmd.cmdItem[1].c_str(), UserList[i].userName) == 0 && strcmp(cmd.cmdItem[2].c_str(), UserList[i].userPwd) == 0) {
             currentUserId = i;
-            currentuserUFD = UserList[i].link;
+            currentUserUFD = UserList[i].link;
             currentUserName = cmd.cmdItem[1];
             flag = 1;
             break;
@@ -71,6 +71,7 @@ void do_Logout() {
     else {
         //MARK: Clear current user link and name
         currentUserId = -1;
+        currentUserUFD = -1;
         currentUserName = "";
         cout << "Logout successfully !!! " << endl;
     }
@@ -90,7 +91,7 @@ void do_Register() {
         cout << "User name and password should be less than 14 letters." << endl;
         return;
     }
-    
+
     //MARK: Check if MFD is full
     if (UserList.size() < 16) {
         //MARK: Check if there is the same user name
@@ -107,20 +108,19 @@ void do_Register() {
             strcpy(UserInput.userPwd, cmd.cmdItem[2].c_str());
             UserInput.link = (int)UserList.size();
             UserList.push_back(UserInput);
-            
+
             currentUserId = (int)UserList.size() - 1;
-            currentuserUFD = UserInput.link;
+            currentUserUFD = UserInput.link;
             currentUserName = UserInput.userName;
-            
+
             vector<UFD> tmpUFD;
             FileList.push_back(tmpUFD);
-            
+
             writeBlock(0);
             cout << "Create account successfully and already login !!!" << endl;
-            
+
         }
-        else
-        {
+        else {
             cout << "User name has already existed, please try again." << endl;
         }
     }
@@ -130,6 +130,10 @@ void do_Register() {
 
 void do_Passwd() {
     //MARK: Input parameter validation
+    if (currentUserId == -1) {
+        cout << "Cannot change password before login." << endl;
+        return;
+    }
     if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
         cout << "Current and new password are required." << endl;
         return;
@@ -149,17 +153,25 @@ void do_Passwd() {
 }
 
 void do_Cancel() {
-    if (currentUserId != -1) {
+    if (currentUserId == -1) {
         cout << "Cannot cancel user before login." << endl;
         return;
     }
-    UserList.erase(UserList.begin() + currentUserId);
     memset(&UserInput, '\0', sizeof(UserInput));
+    UserList.erase(UserList.begin() + currentUserId);
     UserList.push_back(UserInput);
     writeBlock(0);
+    UserList.pop_back();
+    
+    FileList.erase(FileList.begin() + currentUserUFD);
+    vector<UFD> tmpUFD;
+    FileList.push_back(tmpUFD);
+    for (int i = currentUserUFD; i < FileList.size(); i++) {
+        writeBlock(currentUserUFD + 1);
+    }
     
     currentUserId = -1;
-    currentuserUFD = -1;
+    currentUserUFD = -1;
     currentUserName = "";
     cout << "Cancel user successfully !!! " << endl;
 }
@@ -184,10 +196,10 @@ void do_Create() {
         return;
     }
     //MARK: Check if current user's UFD is full
-    if (FileList[currentuserUFD].size() < 16) {
+    if (FileList[currentUserUFD].size() < 16) {
         int flag = 1;
-        for (int i = 0; i < FileList[currentuserUFD].size(); i++) {
-            if (strcmp(FileList[currentuserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+        for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
+            if (strcmp(FileList[currentUserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
                 flag = 0;
                 break;
             }
@@ -200,22 +212,23 @@ void do_Create() {
         strcpy(FileInput.fileName, cmd.cmdItem[1].c_str());
         FileInput.mode = atoi(cmd.cmdItem[2].c_str());
         FileInput.length = 0;
-        
+
         if (FreeBlockList.size() > 0) {
             FileInput.addr = FreeBlockList[0];
             FreeBlockList.erase(FreeBlockList.begin());
-            FileList[currentuserUFD].push_back(FileInput);
-            writeBlock(currentuserUFD + 1);
-            
+            FileList[currentUserUFD].push_back(FileInput);
+            writeBlock(currentUserUFD + 1);
+
             ClusterList[FileInput.addr - 17].nextBlock = FileInput.addr;
+            clearBlock(FileInput.addr);
             writeBlock(FileInput.addr);
-            
+
             cout << "Create file successfully !!!" << endl;
         }
         else {
             cout << "No free block is available for creating file." << endl;
         }
-        
+
     }
     else {
         cout << "The number of file reaches the maximum." << endl;
@@ -238,22 +251,32 @@ void do_Delete() {
     }
     //MARK: Check if the file exsits
     int flag = 0;
-    for (int i = 0; i < FileList[currentuserUFD].size(); i++) {
-        if (strcmp(FileList[currentuserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+    for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
+        if (strcmp(FileList[currentUserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
             //MARK: Delete file
             flag = 1;
-            FileInput = FileList[currentuserUFD][i];
-            FreeBlockList.push_back(FileInput.addr);
+            int iterator = FileList[currentUserUFD][i].addr - 17;
+            int tmp;
+            while (ClusterList[iterator].nextBlock != iterator + 17) {
+                tmp = iterator;
+                iterator = ClusterList[iterator].nextBlock - 17;
+                ClusterList[tmp].nextBlock = -1;
+                getDataBlock(iterator + 17);
+                writeBlock(iterator + 17);
+                FreeBlockList.push_back(iterator + 17);
+            }
+            ClusterList[iterator].nextBlock = -1;
+            getDataBlock(iterator + 17);
+            writeBlock(iterator + 17);
+            FreeBlockList.push_back(iterator + 17);
             sort(FreeBlockList.begin(), FreeBlockList.end());
-            
-            ClusterList[FileInput.addr - 17].nextBlock = -1;
-            writeBlock(FileInput.addr);
-            
-            strcpy(FileInput.fileName, "\0");
-            FileList[currentuserUFD].erase(FileList[currentuserUFD].begin() + i);
-            FileList[currentuserUFD].push_back(FileInput);
-            writeBlock(currentuserUFD + 1);
-            
+
+            memset(&FileInput, '\0', sizeof(FileInput));
+            FileList[currentUserUFD].erase(FileList[currentUserUFD].begin() + i);
+            FileList[currentUserUFD].push_back(FileInput);
+            writeBlock(currentUserUFD + 1);
+            FileList[currentUserUFD].pop_back();
+
             break;
         }
     }
@@ -281,22 +304,24 @@ void do_Read() {
     }
     //MARK: Get file's first block address
     int flag = 0;
-    int address = -1;
-    for (int i = 0; i < FileList[currentuserUFD].size(); i++) {
-        if (strcmp(FileList[currentuserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+    int blockAddress = -1;
+    for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
+        if (strcmp(FileList[currentUserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
             flag = 1;
-            address = FileList[currentuserUFD][i].addr;
+            blockAddress = FileList[currentUserUFD][i].addr;
             break;
         }
     }
     //MARK: Read file content
     if (flag) {
-        
-        while (ClusterList[address - 17].nextBlock != address) {
-            cout << ClusterList[address - 17].content;
-            address = ClusterList[address - 17].nextBlock;
+
+        while (ClusterList[blockAddress - 17].nextBlock != blockAddress) {
+            getDataBlock(blockAddress);
+            cout << ClusterList[blockAddress - 17].content;
+            blockAddress = ClusterList[blockAddress - 17].nextBlock;
         }
-        cout << ClusterList[address - 17].content << endl;
+        getDataBlock(blockAddress);
+        cout << ClusterList[blockAddress - 17].content << endl;
         cout << "Show file content successfully !!!" << endl;
         return;
     }
@@ -309,37 +334,37 @@ void do_Read() {
 void do_Write() {
     //MARK: Input parameter validation
     if (currentUserId == -1) {
-        cout << "Cannot create file before login." << endl;
+        cout << "Cannot write file before login." << endl;
         return;
     }
     if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
-        cout << "File name and mode are required." << endl;
+        cout << "File name and content are required." << endl;
         return;
     }
     if (cmd.cmdItem[1].length() >= 14) {
         cout << "File name should be less than 14 letters." << endl;
         return;
     }
-    if (strcmp(cmd.cmdItem[2].c_str(), "0") != 0 && strcmp(cmd.cmdItem[2].c_str(), "1") != 0) {
-        cout << "Mode should be within 0, 1 (read_only, read_and_write)." << endl;
-        return;
-    }
-    
 
     //MARK: Get file's first block address
     string buffer = cmd.cmdItem[2];
     int flag = 0;
-    int address = -1;
-    int bufferBlockNum = (int)buffer.size() / (512 - sizeof(int)) + 1;
+    int blockAddress = -1;
+    int bufferBlockNum = (int)buffer.size() / (512 - sizeof(int)) + ((int)buffer.size() % (512 - sizeof(int)) > 0);
     int bufferFinalBlockByteNum = buffer.size() % (512 - sizeof(int));
     int secondBlockNum = -1;
     int secondFileId = -1;
-    for (int i = 0; i < FileList[currentuserUFD].size(); i++) {
-        if (strcmp(FileList[currentuserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
-            if (FileList[currentuserUFD][i].mode == 1) {
+    for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
+        if (strcmp(FileList[currentUserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+            if (FileList[currentUserUFD][i].mode == 1) {
                 flag = 1;
-                address = FileList[currentuserUFD][i].addr;
-                secondBlockNum = FileList[currentuserUFD][i].length % (512 - sizeof(int));
+                blockAddress = FileList[currentUserUFD][i].addr;
+                if (FileList[currentUserUFD][i].length == 0) {
+                    secondBlockNum = 1;
+                }
+                else {
+                    secondBlockNum = FileList[currentUserUFD][i].length / (512 - sizeof(int)) + (FileList[currentUserUFD][i].length % (512 - sizeof(int)) > 0);
+                }
                 secondFileId = i;
                 break;
             }
@@ -353,25 +378,25 @@ void do_Write() {
     if (flag) {
         if (bufferBlockNum > secondBlockNum) {
             if (FreeBlockList.size() < bufferBlockNum - secondBlockNum) {
-                cout << "Cannot write cause t/Users/martini/Desktop/FileSystemSimulation/FileSystemSimulation/Block.cpphere's no free space." << endl;
+                cout << "Cannot write cause there's no free space." << endl;
                 return;
             }
-            FileList[currentuserUFD][secondFileId].length = (int)buffer.size();
-            
+            FileList[currentUserUFD][secondFileId].length = (int)buffer.size();
+
             int firstIterator = 0;
-            int secondIterator = address;
+            int secondIterator = blockAddress - 17;
             int allocatedBlock =  -1;
             while (firstIterator != bufferBlockNum) {
                 if (ClusterList[secondIterator].nextBlock != secondIterator + 17) {
                     strcpy(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), (512 - sizeof(int))).c_str());
                     writeBlock(secondIterator + 17);
-                    secondIterator = ClusterList[secondIterator].nextBlock;
+                    secondIterator = ClusterList[secondIterator].nextBlock - 17;
                     firstIterator++;
                 }
                 else {
                     strcpy(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), (512 - sizeof(int))).c_str());
                     firstIterator++;
-                    
+
                     allocatedBlock = FreeBlockList[0];
                     FreeBlockList.erase(FreeBlockList.begin());
                     ClusterList[secondIterator].nextBlock = allocatedBlock;
@@ -386,12 +411,15 @@ void do_Write() {
         }
         else {
             int firstIterator = 0;
-            int secondIterator = address;
+            int secondIterator = blockAddress - 17;
             int recycleIterator =  -1;
+            
+            FileList[currentUserUFD][secondFileId].length = (int)buffer.size();
+
             while (firstIterator != bufferBlockNum) {
                 strcpy(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), (512 - sizeof(int))).c_str());
                 writeBlock(secondIterator + 17);
-                secondIterator = ClusterList[secondIterator].nextBlock;
+                secondIterator = ClusterList[secondIterator].nextBlock - 17;
                 firstIterator++;
             }
             strcpy(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), bufferFinalBlockByteNum).c_str());
@@ -423,8 +451,12 @@ void do_Write() {
 }
 
 void do_Ls() {
-    for (int i = 0; i < FileList[currentuserUFD].size(); i++) {
-        cout << FileList[currentuserUFD][i].fileName <<endl;
+    if (currentUserId == -1) {
+        cout << "Cannot list the file directory before login." << endl;
+        return;
+    }
+    for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
+        cout << FileList[currentUserUFD][i].fileName << endl;
     }
 }
 
@@ -445,15 +477,15 @@ void do_Chmod() {
         cout << "Mode should be within 0, 1 (read_only, read_and_write)." << endl;
         return;
     }
-    
+
     int flag = 0;
-    for (int i = 0; i < FileList[currentuserUFD].size(); i++) {
-        if (strcmp(FileList[currentuserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+    for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
+        if (strcmp(FileList[currentUserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
             flag = 1;
-            
-            FileList[currentuserUFD][i].mode = atoi(cmd.cmdItem[2].c_str());
-            writeBlock(currentuserUFD + 1);
-            
+
+            FileList[currentUserUFD][i].mode = atoi(cmd.cmdItem[2].c_str());
+            writeBlock(currentUserUFD + 1);
+
             break;
         }
     }
@@ -470,7 +502,7 @@ void do_Chown() {
         cout << "Cannot change owner before login." << endl;
         return;
     }
-    
+
     if (strcmp(cmd.cmdItem[1].c_str(), "") == 0 || strcmp(cmd.cmdItem[2].c_str(), "") == 0) {
         cout << "File name and new owner are required." << endl;
         return;
@@ -489,23 +521,24 @@ void do_Chown() {
             break;
         }
     }
-    
+
     if (flag)
     {
         flag = 0;
-        for (int i = 0; i < FileList[currentuserUFD].size(); i++) {
-            if (strcmp(FileList[currentuserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+        for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
+            if (strcmp(FileList[currentUserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
                 flag = 1;
                 //MARK: 一边push 一边erase插空 FileList
-                FileInput = FileList[currentuserUFD][i];
+                FileInput = FileList[currentUserUFD][i];
                 FileList[newOwnerId].push_back(FileInput);
                 writeBlock(newOwnerId + 1);
-                
-                strcpy(FileInput.fileName, "\0");
-                FileList[currentuserUFD].erase(FileList[currentuserUFD].begin() + i);
-                FileList[currentuserUFD].push_back(FileInput);
-                writeBlock(currentuserUFD + 1);
-                
+
+                memset(&FileInput, '\0', sizeof(FileInput));
+                FileList[currentUserUFD].erase(FileList[currentUserUFD].begin() + i);
+                FileList[currentUserUFD].push_back(FileInput);
+                writeBlock(currentUserUFD + 1);
+                FileList[currentUserUFD].pop_back();
+
                 break;
             }
         }
@@ -529,10 +562,14 @@ void do_Chown() {
 }
 
 void do_Mv() {
+    if (currentUserId == -1) {
+        cout << "Cannot change file name before login." << endl;
+        return;
+    }
     int flag = 0;
     int fileId = -1;
-    for (int i = 0; i < FileList[currentuserUFD].size(); i++) {
-        if (strcmp(FileList[currentuserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+    for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
+        if (strcmp(FileList[currentUserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
             flag = 1;
             fileId = i;
             break;
@@ -541,16 +578,16 @@ void do_Mv() {
     
     if (flag) {
         flag = 1;
-        for (int i = 0; i < FileList[currentuserUFD].size(); i++) {
-            if (strcmp(FileList[currentuserUFD][i].fileName, cmd.cmdItem[2].c_str()) == 0) {
+        for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
+            if (strcmp(FileList[currentUserUFD][i].fileName, cmd.cmdItem[2].c_str()) == 0) {
                 flag = 0;
                 break;
             }
         }
         
         if (flag) {
-            strcpy(FileList[currentuserUFD][fileId].fileName, cmd.cmdItem[2].c_str());
-            writeBlock(currentuserUFD + 1);
+            strcpy(FileList[currentUserUFD][fileId].fileName, cmd.cmdItem[2].c_str());
+            writeBlock(currentUserUFD + 1);
             
             cout << "Change file name successfully !!!" << endl;
             return;
@@ -568,51 +605,57 @@ void do_Mv() {
 
 void do_Copy() {
     //Mv srcFile desFile
+    if (currentUserId == -1) {
+        cout << "Cannot copy fiel before login." << endl;
+        return;
+    }
     int flag = 0;
     int firstFileId = -1;
     int secondFileId = -1;
-    for (int i = 0; i < FileList[currentuserUFD].size(); i++) {
-        if (strcmp(FileList[currentuserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
+    for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
+        if (strcmp(FileList[currentUserUFD][i].fileName, cmd.cmdItem[1].c_str()) == 0) {
             flag = 1;
             firstFileId = i;
             break;
         }
     }
-    
+
     if (flag) {
         flag = 0;
-        for (int i = 0; i < FileList[currentuserUFD].size(); i++) {
-            if (strcmp(FileList[currentuserUFD][i].fileName, cmd.cmdItem[2].c_str()) == 0) {
+        for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
+            if (strcmp(FileList[currentUserUFD][i].fileName, cmd.cmdItem[2].c_str()) == 0) {
                 flag = 1;
                 secondFileId = i;
                 break;
             }
         }
-        
+
         if (flag) {
-            int firstBlockNum = FileList[currentuserUFD][firstFileId].length % (512 - sizeof(int));
-            int secondBlockNum = FileList[currentuserUFD][secondFileId].length % (512 - sizeof(int));
+            int firstBlockNum = FileList[currentUserUFD][firstFileId].length % (512 - sizeof(int));
+            int secondBlockNum = FileList[currentUserUFD][secondFileId].length % (512 - sizeof(int));
             if (firstBlockNum > secondBlockNum) {
                 if (FreeBlockList.size() < firstBlockNum - secondBlockNum) {
                     cout << "Cannot copy cause there's no free space." << endl;
                     return;
                 }
-                FileList[currentuserUFD][secondFileId].length = FileList[currentuserUFD][firstFileId].length;
+                FileList[currentUserUFD][secondFileId].length = FileList[currentUserUFD][firstFileId].length;
                 //开始cpoy
-                int firstIterator = FileList[currentuserUFD][firstFileId].addr;
-                int secondIterator = FileList[currentuserUFD][secondFileId].addr;
+                int firstIterator = FileList[currentUserUFD][firstFileId].addr;
+                int secondIterator = FileList[currentUserUFD][secondFileId].addr;
                 int allocatedBlock =  -1;
                 while (ClusterList[firstIterator].nextBlock != firstIterator + 17) {
                     if (ClusterList[secondIterator].nextBlock != secondIterator + 17) {
+                        getDataBlock(firstIterator);
                         strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
                         writeBlock(secondIterator + 17);
                         secondIterator = ClusterList[secondIterator].nextBlock;
                         firstIterator = ClusterList[firstIterator].nextBlock;
                     }
                     else {
+                        getDataBlock(firstIterator);
                         strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
                         firstIterator = ClusterList[firstIterator].nextBlock;
-                        
+
                         allocatedBlock = FreeBlockList[0];
                         FreeBlockList.erase(FreeBlockList.begin());
                         ClusterList[secondIterator].nextBlock = allocatedBlock;
@@ -621,24 +664,28 @@ void do_Copy() {
                         secondIterator = allocatedBlock - 17;
                     }
                 }
+                clearBlock(secondIterator + 17);
+                getDataBlock(firstIterator);
                 strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
                 writeBlock(secondIterator + 17);
             }
             else {
-                int firstIterator = FileList[currentuserUFD][firstFileId].addr;
-                int secondIterator = FileList[currentuserUFD][secondFileId].addr;
+                int firstIterator = FileList[currentUserUFD][firstFileId].addr;
+                int secondIterator = FileList[currentUserUFD][secondFileId].addr;
                 int recycleIterator =  -1;
                 while (ClusterList[firstIterator].nextBlock != firstIterator + 17) {
+                    getDataBlock(firstIterator);
                     strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
                     writeBlock(secondIterator + 17);
                     secondIterator = ClusterList[secondIterator].nextBlock;
                     firstIterator = ClusterList[firstIterator].nextBlock;
                 }
+                getDataBlock(firstIterator);
                 strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
                 recycleIterator = ClusterList[secondIterator].nextBlock - 17;
                 ClusterList[secondIterator].nextBlock = secondIterator + 17;
                 writeBlock(secondIterator + 17);
-                
+
                 if (firstBlockNum != secondBlockNum) {
                     while (ClusterList[recycleIterator].nextBlock != recycleIterator + 17) {
                         FreeBlockList.push_back(recycleIterator + 17);
@@ -653,7 +700,7 @@ void do_Copy() {
                     writeBlock(recycleIterator + 17);
                 }
             }
-            
+
             cout << "Copy file successfully !!!" << endl;
             return;
         }
@@ -669,8 +716,7 @@ void do_Copy() {
 }
 
 //MARK: System-related command
-void do_Help()
-{
+void do_Help() {
 //    cout << "Login    userName pwd    用户登陆" << endl;
 //    cout << "Logout    用户登出" << endl;
 //    cout << "Register usrName pwd   用户注册" << endl;
@@ -702,6 +748,10 @@ void do_Clear() {
 
 void do_Format() {
     format();
+    initFileSystem();
+    currentUserId = -1;
+    currentUserUFD = -1;
+    currentUserName = "";
     cout << "Disk format successfully !!!" <<endl;
     return;
 }

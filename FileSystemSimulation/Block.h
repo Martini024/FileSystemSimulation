@@ -9,9 +9,12 @@
 #ifndef Block_h
 #define Block_h
 
-char* readBlock(int blockNum);
+char* readBlock(int blockNum, int nbytes = 512);
 
 void writeBlock(int blockNum);
 
 void clearBlock(int blockNum);
+
+void getDataBlock(int blockNum);
+
 #endif /* Block_hpp */

@@ -24,10 +24,10 @@ extern char* buffer;
 extern fstream fio;
 extern char * buffer;
 
-char* readBlock(int blockNum) {
+char* readBlock(int blockNum, int nbytes) {
     openFile();
     fio.seekg(blockNum * 513, ios_base::beg);
-    fio.read(buffer, 512);    //read函数
+    fio.read(buffer, nbytes);    //read函数
     closeFile();
     return buffer;
 }
@@ -67,4 +67,11 @@ void clearBlock(int blockNum) {
         closeFile();
     }
     return;
+}
+
+void getDataBlock(int blockNum) {
+    if (blockNum >= 17 && blockNum <= 99) {
+        buffer = readBlock(blockNum);
+        memmove(&ClusterList[blockNum - 17].content, buffer + sizeof(int), 512 - sizeof(int));
+    }
 }

@@ -10,7 +10,7 @@
 #define Unix_h
 
 struct Command{
-    string cmdItem[4];
+    string cmdItem[3];
 };
 
 struct HAND_TO{

@@ -29,5 +29,4 @@ struct Cluster{
 
 void initFileSystem();
 
-void closeFileSystem();
 #endif

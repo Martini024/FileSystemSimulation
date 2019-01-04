@@ -9,10 +9,10 @@
 #ifndef Stream_h
 #define Stream_h
 
-void foramt();
-
 void openFile();
 
 void closeFile();
+
+void foramt();
 
 #endif /* Stream_hpp */

@@ -27,6 +27,7 @@ char* buffer = new char[512];
 
 
 void initMFD() {
+    UserList.clear();
     buffer = readBlock(0);
     for (int i = 0; i < 16; i++) {
         memmove(&UserInput, buffer + i * sizeof(UserInput), sizeof(UserInput));
@@ -40,6 +41,7 @@ void initMFD() {
 }
 
 void initUFD() {
+    FileList.clear();
     vector<UFD> tmpUFD;
     for (int i = 1; i < UserList.size() + 1; i++) {
         FileList.push_back(tmpUFD);
@@ -57,9 +59,11 @@ void initUFD() {
 }
 
 void initCluster() {
+    ClusterList.clear();
+    FreeBlockList.clear();
     for (int i = 17; i < 100; i++) {
-        buffer = readBlock(i);
-        memmove(&ClusterInput, buffer, sizeof(ClusterInput));
+        buffer = readBlock(i, sizeof(int));
+        memmove(&ClusterInput, buffer, sizeof(int));
         ClusterList.push_back(ClusterInput);
         if (ClusterInput.nextBlock == -1) {
             FreeBlockList.push_back(i);

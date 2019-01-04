@@ -16,26 +16,26 @@ Command cmd;
 int cmdParaNum;
 
 HAND_TO handlerList[] = {
-    { "Create", do_Create},
-    { "Delete", do_Delete},
-    { "Read", do_Read},
-    { "Write", do_Write},
-    { "Ls", do_Ls},
-    { "Chmod", do_Chmod},
-    { "Chown", do_Chown},
-    { "Mv", do_Mv},
-    { "Copy", do_Copy},
+    { "create", do_Create},
+    { "delete", do_Delete},
+    { "read", do_Read},
+    { "write", do_Write},
+    { "ls", do_Ls},
+    { "chmod", do_Chmod},
+    { "chown", do_Chown},
+    { "mv", do_Mv},
+    { "copy", do_Copy},
     
-    { "Login", do_Login},
-    { "Logout", do_Logout},
-    { "Register", do_Register},
-    { "Passwd", do_Passwd},
-    { "Cancel", do_Cancel},
+    { "login", do_Login},
+    { "logout", do_Logout},
+    { "register", do_Register},
+    { "passwd", do_Passwd},
+    { "cancel", do_Cancel},
     
-    { "Help", do_Help},
-    { "Exit", do_Exit},
-    { "Clear", do_Clear},
-    { "Format", do_Format}
+    { "help", do_Help},
+    { "exit", do_Exit},
+    { "clear", do_Clear},
+    { "format", do_Format}
     
 };
 
@@ -53,9 +53,20 @@ void processCommand() {
 
         string str;
         getline(cin, str);
+        
+        bool findQuotes = false;
+        string inner, post;
+        int quotes1 = (int)str.find('\"');
+        int quotes2 = (int)str.rfind('\"');
+        if (quotes1 != -1 && quotes1 != quotes2) {
+            string pre = str.substr(0, quotes1);
+            inner = str.substr(quotes1 + 1, quotes2 - quotes1 - 1);
+            str = pre;
+            findQuotes = true;
+        }
+        
         stringstream sin(str);
-        
-        
+
         cmdParaNum = 0;
         for (int i = 0; i < 3; i++) {
             cmd.cmdItem[i] = "";
@@ -63,8 +74,14 @@ void processCommand() {
         while (sin >> cmd.cmdItem[cmdParaNum]){
             cmdParaNum++;
         }
+        if (findQuotes) {
+            cmd.cmdItem[cmdParaNum] = inner;
+            cmdParaNum++;
+        }
         
-        int flag = 0;
+        transform(cmd.cmdItem[0].begin(),cmd.cmdItem[0].end(),cmd.cmdItem[0].begin(),::tolower);
+        int flag;
+        flag = 0;
         for (int i = 0; i < 20; i++)
         {
             if (strcmp(handlerList[i].cmdName, cmd.cmdItem[0].c_str()) == 0)
