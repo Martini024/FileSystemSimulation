@@ -27,6 +27,10 @@ extern Command cmd;
 
 //MARK: User-related command
 void do_Login() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: login userName pwd" << endl;
+        return;
+    }
     //MARK: Input parameter validation
     if (currentUserId != -1) {
         cout << "Cannot login before current user logout." << endl;
@@ -41,7 +45,7 @@ void do_Login() {
         cout << "User name and password should be less than 14 letters." << endl;
         return;
     }
-
+    
     //MARK: Record current user link and name
     int flag = 0;
     for (int i = 0; i < UserList.size(); i++) {
@@ -63,6 +67,10 @@ void do_Login() {
 }
 
 void do_Logout() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: logout" << endl;
+        return;
+    }
     //MARK: Input parameter validation
     if (currentUserId == -1) {
         cout << "Bro you do not need to logout without login." << endl;
@@ -78,6 +86,10 @@ void do_Logout() {
 }
 
 void do_Register() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: register userName pwd" << endl;
+        return;
+    }
     //MARK: Input parameter validation
     if (currentUserId != -1) {
         cout << "Cannot register before current user logout." << endl;
@@ -129,6 +141,10 @@ void do_Register() {
 }
 
 void do_Passwd() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: passwd originPwd newPwd" << endl;
+        return;
+    }
     //MARK: Input parameter validation
     if (currentUserId == -1) {
         cout << "Cannot change password before login." << endl;
@@ -144,6 +160,7 @@ void do_Passwd() {
     }
     //MARK: Change password
     if (strcmp(UserList[currentUserId].userPwd, cmd.cmdItem[1].c_str()) == 0) {
+        memset(UserList[currentUserId].userPwd, '\0', 14);
         strcpy(UserList[currentUserId].userPwd, cmd.cmdItem[2].c_str());
         writeBlock(0);
         cout << "Change password successful !!!" << endl;
@@ -152,32 +169,12 @@ void do_Passwd() {
         cout << "Current password is wrong." << endl;
 }
 
-void do_Cancel() {
-    if (currentUserId == -1) {
-        cout << "Cannot cancel user before login." << endl;
-        return;
-    }
-    memset(&UserInput, '\0', sizeof(UserInput));
-    UserList.erase(UserList.begin() + currentUserId);
-    UserList.push_back(UserInput);
-    writeBlock(0);
-    UserList.pop_back();
-    
-    FileList.erase(FileList.begin() + currentUserUFD);
-    vector<UFD> tmpUFD;
-    FileList.push_back(tmpUFD);
-    for (int i = currentUserUFD; i < FileList.size(); i++) {
-        writeBlock(currentUserUFD + 1);
-    }
-    
-    currentUserId = -1;
-    currentUserUFD = -1;
-    currentUserName = "";
-    cout << "Cancel user successfully !!! " << endl;
-}
-
 //MARK: File-related command
 void do_Create() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: create fileName mode" << endl;
+        return;
+    }
     //MARK: Input parameter validation
     if (currentUserId == -1) {
         cout << "Cannot create file before login." << endl;
@@ -209,6 +206,7 @@ void do_Create() {
             return;
         }
         //MARK: Create file
+        memset(&FileInput, '\0', sizeof(FileInput));
         strcpy(FileInput.fileName, cmd.cmdItem[1].c_str());
         FileInput.mode = atoi(cmd.cmdItem[2].c_str());
         FileInput.length = 0;
@@ -221,6 +219,7 @@ void do_Create() {
 
             ClusterList[FileInput.addr - 17].nextBlock = FileInput.addr;
             clearBlock(FileInput.addr);
+            getDataBlock(FileInput.addr);
             writeBlock(FileInput.addr);
 
             cout << "Create file successfully !!!" << endl;
@@ -236,6 +235,10 @@ void do_Create() {
 }
 
 void do_Delete() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip delete fileName" << endl;
+        return;
+    }
     //MARK: Input parameter validation
     if (currentUserId == -1) {
         cout << "Cannot delete file before login." << endl;
@@ -261,17 +264,16 @@ void do_Delete() {
                 tmp = iterator;
                 iterator = ClusterList[iterator].nextBlock - 17;
                 ClusterList[tmp].nextBlock = -1;
-                getDataBlock(iterator + 17);
-                writeBlock(iterator + 17);
-                FreeBlockList.push_back(iterator + 17);
+                writeBlock(tmp + 17);
+                FreeBlockList.push_back(tmp + 17);
             }
             ClusterList[iterator].nextBlock = -1;
-            getDataBlock(iterator + 17);
             writeBlock(iterator + 17);
             FreeBlockList.push_back(iterator + 17);
             sort(FreeBlockList.begin(), FreeBlockList.end());
 
             memset(&FileInput, '\0', sizeof(FileInput));
+        
             FileList[currentUserUFD].erase(FileList[currentUserUFD].begin() + i);
             FileList[currentUserUFD].push_back(FileInput);
             writeBlock(currentUserUFD + 1);
@@ -289,6 +291,10 @@ void do_Delete() {
 }
 
 void do_Read() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: read fileName" << endl;
+        return;
+    }
     //MARK: Input parameter validation
     if (currentUserId == -1) {
         cout << "Cannot show file content before login." << endl;
@@ -332,6 +338,10 @@ void do_Read() {
 }
 
 void do_Write() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: write fileName buffer" << endl;
+        return;
+    }
     //MARK: Input parameter validation
     if (currentUserId == -1) {
         cout << "Cannot write file before login." << endl;
@@ -389,13 +399,13 @@ void do_Write() {
             int allocatedBlock =  -1;
             while (firstIterator + 1 != bufferBlockNum) {
                 if (ClusterList[secondIterator].nextBlock != secondIterator + 17) {
-                    strcpy(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), (512 - sizeof(int))).c_str());
+                    memmove(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), (512 - sizeof(int))).c_str(), (512 - sizeof(int)));
                     writeBlock(secondIterator + 17);
                     secondIterator = ClusterList[secondIterator].nextBlock - 17;
                     firstIterator++;
                 }
                 else {
-                    strcpy(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), (512 - sizeof(int))).c_str());
+                    memmove(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), (512 - sizeof(int))).c_str(), (512 - sizeof(int)));
                     firstIterator++;
 
                     allocatedBlock = FreeBlockList[0];
@@ -407,7 +417,7 @@ void do_Write() {
                 }
             }
             clearBlock(secondIterator + 17);
-            strcpy(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), bufferFinalBlockByteNum).c_str());
+            memmove(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), bufferFinalBlockByteNum).c_str(), (512 - sizeof(int)));
             writeBlock(secondIterator + 17);
         }
         else {
@@ -419,12 +429,12 @@ void do_Write() {
             writeBlock(currentUserUFD + 1);
             
             while (firstIterator + 1 != bufferBlockNum) {
-                strcpy(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), (512 - sizeof(int))).c_str());
+                memmove(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), (512 - sizeof(int))).c_str(), (512 - sizeof(int)));
                 writeBlock(secondIterator + 17);
                 secondIterator = ClusterList[secondIterator].nextBlock - 17;
                 firstIterator++;
             }
-            strcpy(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), bufferFinalBlockByteNum).c_str());
+            memmove(ClusterList[secondIterator].content, buffer.substr(firstIterator * (512 - sizeof(int)), bufferFinalBlockByteNum).c_str(), bufferFinalBlockByteNum);
             recycleIterator = ClusterList[secondIterator].nextBlock - 17;
             ClusterList[secondIterator].nextBlock = secondIterator + 17;
             writeBlock(secondIterator + 17);
@@ -453,16 +463,24 @@ void do_Write() {
 }
 
 void do_Ls() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: ls" << endl;
+        return;
+    }
     if (currentUserId == -1) {
         cout << "Cannot list the file directory before login." << endl;
         return;
     }
     for (int i = 0; i < FileList[currentUserUFD].size(); i++) {
-        cout << FileList[currentUserUFD][i].fileName << endl;
+        cout << FileList[currentUserUFD][i].fileName << "  " << FileList[currentUserUFD][i].addr << endl;
     }
 }
 
 void do_Chmod() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: chmod fileName newMode" << endl;
+        return;
+    }
     if (currentUserId == -1) {
         cout << "Cannot change mode before login." << endl;
         return;
@@ -500,6 +518,10 @@ void do_Chmod() {
 }
 
 void do_Chown() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: chown fileName newOwner" << endl;
+        return;
+    }
     if (currentUserId == -1) {
         cout << "Cannot change owner before login." << endl;
         return;
@@ -564,6 +586,10 @@ void do_Chown() {
 }
 
 void do_Mv() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: mv srcFile desFile" << endl;
+        return;
+    }
     if (currentUserId == -1) {
         cout << "Cannot change file name before login." << endl;
         return;
@@ -610,6 +636,10 @@ void do_Mv() {
 }
 
 void do_Copy() {
+    if (strcmp(cmd.cmdItem[1].c_str(), "?") == 0) {
+        cout << "Tip: copy srcFile desFile" << endl;
+        return;
+    }
     //Mv srcFile desFile
     if (currentUserId == -1) {
         cout << "Cannot copy fiel before login." << endl;
@@ -637,8 +667,22 @@ void do_Copy() {
         }
 
         if (flag) {
-            int firstBlockNum = FileList[currentUserUFD][firstFileId].length / (512 - sizeof(int)) + (FileList[currentUserUFD][firstFileId].length % (512 - sizeof(int)) > 0);
-            int secondBlockNum = FileList[currentUserUFD][secondFileId].length / (512 - sizeof(int)) + (FileList[currentUserUFD][secondFileId].length % (512 - sizeof(int)) > 0);
+            int firstBlockNum = -1;
+            int secondBlockNum = -1;
+            if (FileList[currentUserUFD][firstFileId].length == 0) {
+                firstBlockNum = 1;
+            }
+            else {
+                firstBlockNum = FileList[currentUserUFD][firstFileId].length / (512 - sizeof(int)) + (FileList[currentUserUFD][firstFileId].length % (512 - sizeof(int)) > 0);
+            }
+            
+            if (FileList[currentUserUFD][secondFileId].length == 0) {
+                secondBlockNum = 1;
+            }
+            else {
+                secondBlockNum = FileList[currentUserUFD][secondFileId].length / (512 - sizeof(int)) + (FileList[currentUserUFD][secondFileId].length % (512 - sizeof(int)) > 0);
+            }
+            
             if (firstBlockNum > secondBlockNum) {
                 if (FreeBlockList.size() < firstBlockNum - secondBlockNum) {
                     cout << "Cannot copy cause there's no free space." << endl;
@@ -653,14 +697,14 @@ void do_Copy() {
                 while (ClusterList[firstIterator].nextBlock != firstIterator + 17) {
                     if (ClusterList[secondIterator].nextBlock != secondIterator + 17) {
                         getDataBlock(firstIterator + 17);
-                        strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
+                        memmove(ClusterList[secondIterator].content, ClusterList[firstIterator].content, (512 - sizeof(int)));
                         writeBlock(secondIterator + 17);
-                        secondIterator = ClusterList[secondIterator].nextBlock;
-                        firstIterator = ClusterList[firstIterator].nextBlock;
+                        secondIterator = ClusterList[secondIterator].nextBlock - 17;
+                        firstIterator = ClusterList[firstIterator].nextBlock - 17;
                     }
                     else {
                         getDataBlock(firstIterator + 17);
-                        strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
+                        memmove(ClusterList[secondIterator].content, ClusterList[firstIterator].content, (512 - sizeof(int)));
                         firstIterator = ClusterList[firstIterator].nextBlock - 17;
 
                         allocatedBlock = FreeBlockList[0];
@@ -673,7 +717,7 @@ void do_Copy() {
                 }
                 clearBlock(secondIterator + 17);
                 getDataBlock(firstIterator + 17);
-                strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
+                memmove(ClusterList[secondIterator].content, ClusterList[firstIterator].content, (512 - sizeof(int)));
                 writeBlock(secondIterator + 17);
             }
             else {
@@ -682,13 +726,13 @@ void do_Copy() {
                 int recycleIterator =  -1;
                 while (ClusterList[firstIterator].nextBlock != firstIterator + 17) {
                     getDataBlock(firstIterator + 17);
-                    strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
+                    memmove(ClusterList[secondIterator].content, ClusterList[firstIterator].content, (512 - sizeof(int)));
                     writeBlock(secondIterator + 17);
                     secondIterator = ClusterList[secondIterator].nextBlock - 17;
                     firstIterator = ClusterList[firstIterator].nextBlock - 17;
                 }
                 getDataBlock(firstIterator + 17);
-                strcpy(ClusterList[secondIterator].content, ClusterList[firstIterator].content);
+                memmove(ClusterList[secondIterator].content, ClusterList[firstIterator].content, (512 - sizeof(int)));
                 recycleIterator = ClusterList[secondIterator].nextBlock - 17;
                 ClusterList[secondIterator].nextBlock = secondIterator + 17;
                 writeBlock(secondIterator + 17);
@@ -724,27 +768,28 @@ void do_Copy() {
 
 //MARK: System-related command
 void do_Help() {
-//    cout << "Login    userName pwd    用户登陆" << endl;
-//    cout << "Logout    用户登出" << endl;
-//    cout << "Register usrName pwd   用户注册" << endl;
-//    cout << "Passwd    oldPwd  newPwd    修改用户口令" << endl;
-//    cout << "Open   filename mode   打开文件" << endl;
-//    cout << "Close  filename   关闭文件" << endl;
-//    cout << "Create     filename mode      建立文件" << endl;
-//    cout << "Delete     filename   删除文件" << endl;
-//    cout << "Write    filename buffer nbytes   写文件" << endl;
-//    cout << "Read     filename buffer nbytes   读文件" << endl;
-//    cout << "dir   列出该用户下所有文件" << endl;
-//    cout << "Chmod    filename mode       改变文件权限" << endl;
-//    cout << "Chown    filename new_owner    改变文件拥有者" << endl;
-//    cout << "Mv    srcFile desFile       改变文件名" << endl;
-//    cout << "Copy   srcFile desFile   文件拷贝" << endl;
-//    cout << "Type    filename     显示文件内容" << endl;
-//    cout << "Exit   退出程序" << endl;
-//    cout << "sysc   同步到磁盘 " << endl;
+    cout << "login    userName    pwd       用户登陆" << endl;
+    cout << "Logout                         用户登出" << endl;
+    cout << "Register usrName     pwd       用户注册" << endl;
+    cout << "Passwd   originPwd   newPwd    修改用户口令" << endl;
+    cout << endl;
+    cout << "Create   fileName    mode      建立文件" << endl;
+    cout << "Delete   fileName              删除文件" << endl;
+    cout << "Read     fileName              读文件" << endl;
+    cout << "Write    fileName    buffer    写文件" << endl;
+    cout << "Ls                             列出该用户下所有文件" << endl;
+    cout << "Chmod    fileName    newMode   改变文件权限" << endl;
+    cout << "Chown    filename    new_owner 改变文件拥有者" << endl;
+    cout << "Mv       srcFile     desFile   改变文件名" << endl;
+    cout << "Copy     srcFile     desFile   文件拷贝" << endl;
+    cout << endl;
+    cout << "Exit                           退出程序" << endl;
+    cout << "Clear                          清屏" << endl;
+    cout << "Format                         格式化磁盘" << endl;
 }
 
 void do_Exit() {
+    delete buffer;
     exit(0);
 }
 

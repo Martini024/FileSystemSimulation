@@ -13,6 +13,6 @@ void openFile();
 
 void closeFile();
 
-void foramt();
+void format();
 
 #endif /* Stream_hpp */

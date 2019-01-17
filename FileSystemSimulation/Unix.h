@@ -18,8 +18,6 @@ struct HAND_TO{
     void (*handler)();
 };
 
-void format();
-
 void loginWelcome();
 
 void processCommand();

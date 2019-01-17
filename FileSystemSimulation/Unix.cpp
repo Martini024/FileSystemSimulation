@@ -30,7 +30,6 @@ HAND_TO handlerList[] = {
     { "logout", do_Logout},
     { "register", do_Register},
     { "passwd", do_Passwd},
-    { "cancel", do_Cancel},
     
     { "help", do_Help},
     { "exit", do_Exit},
@@ -71,6 +70,7 @@ void processCommand() {
         for (int i = 0; i < 3; i++) {
             cmd.cmdItem[i] = "";
         }
+        
         while (sin >> cmd.cmdItem[cmdParaNum]){
             cmdParaNum++;
         }

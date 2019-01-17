@@ -13,7 +13,6 @@ void do_Login();
 void do_Logout();
 void do_Register();
 void do_Passwd();
-void do_Cancel();
 
 void do_Create();
 void do_Delete();

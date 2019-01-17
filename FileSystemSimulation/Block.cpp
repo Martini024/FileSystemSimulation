@@ -38,17 +38,17 @@ void writeBlock(int blockNum) {
     fio.seekp(blockNum * 513, ios_base::beg);
     if (blockNum == 0) {
         for (int i = 0; i < UserList.size(); i++) {
-            fio.write((char*)&(UserList[i]), sizeof(UserList[i]));
+            fio.write(reinterpret_cast<char *>(&(UserList[i])), sizeof(MFD));
         }
     }
     else if (blockNum >= 1 && blockNum <= 16) {
         for (int i = 0; i < FileList[blockNum - 1].size(); i++) {
-            fio.write((char*)&((FileList[blockNum - 1])[i]), sizeof((FileList[blockNum - 1])[i]));
-            fio.seekp(32 - sizeof((FileList[blockNum - 1])[i]), ios_base::cur);
+            fio.write(reinterpret_cast<char *>(&(FileList[blockNum - 1][i])), sizeof(UFD));
+            fio.seekp((32 - sizeof(UFD)), ios_base::cur);
         }
     }
     else if (blockNum >= 17 && blockNum <= 99) {
-        fio.write((char*)&(ClusterList[blockNum - 17]), sizeof(ClusterList[blockNum - 17]));
+        fio.write(reinterpret_cast<char *>(&(ClusterList[blockNum - 17])), sizeof(Cluster));
     }
     closeFile();
 }
@@ -73,6 +73,6 @@ void clearBlock(int blockNum) {
 void getDataBlock(int blockNum) {
     if (blockNum >= 17 && blockNum <= 99) {
         buffer = readBlock(blockNum);
-        memmove(&ClusterList[blockNum - 17].content, buffer + sizeof(int), 512 - sizeof(int));
+        memmove(ClusterList[blockNum - 17].content, buffer + sizeof(int), 512 - sizeof(int));
     }
 }
